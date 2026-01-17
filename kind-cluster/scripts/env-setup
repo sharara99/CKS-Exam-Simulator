@@ -120,15 +120,27 @@ echo "$(date '+%Y-%m-%d %H:%M:%S') | ✅ K3d cluster '$CLUSTER_NAME' is up and r
 echo "$(date '+%Y-%m-%d %H:%M:%S') | Docker and KIND environment is ready for use"
 
 # Save kubeconfig and set API server address
+# First ensure config file is up to date
+if [ -f /home/candidate/.kube/config ]; then
+    # Update the server address in config file to use k8s-api-server (Docker service name) so it works from all containers
+    sed -i 's|server: https://[^[:space:]]*|server: https://k8s-api-server:6445|g' /home/candidate/.kube/config
+    # Remove certificate-authority-data if it exists
+    sed -i '/certificate-authority-data:/d' /home/candidate/.kube/config
+    # Add insecure-skip-tls-verify if not present
+    if ! grep -q "insecure-skip-tls-verify" /home/candidate/.kube/config; then
+        sed -i '/server: https:\/\/k8s-api-server:6445/a\    insecure-skip-tls-verify: true' /home/candidate/.kube/config
+    fi
+fi
+# Copy config to kubeconfig
 cp /home/candidate/.kube/config /home/candidate/.kube/kubeconfig
-# Update the server address to use k8s-api-server:6445
-sed -i 's|server: https://.*|server: https://k8s-api-server:6445|g' /home/candidate/.kube/kubeconfig
-# Remove certificate-authority-data if it exists (cannot use with insecure-skip-tls-verify)
-sed -i '/certificate-authority-data:/,/^[[:space:]]*[^[:space:]]/ { /certificate-authority-data:/d; /^[[:space:]]*[^[:space:]]/!d; }' /home/candidate/.kube/kubeconfig
-# Remove any existing certificate-authority-data lines
+# Ensure kubeconfig also has correct server address (double-check)
+sed -i 's|server: https://[^[:space:]]*|server: https://k8s-api-server:6445|g' /home/candidate/.kube/kubeconfig
+# Remove certificate-authority-data if it exists
 sed -i '/certificate-authority-data:/d' /home/candidate/.kube/kubeconfig
-# Add insecure-skip-tls-verify for certificate issues
-sed -i '/server: https:\/\/k8s-api-server:6445/a\    insecure-skip-tls-verify: true' /home/candidate/.kube/kubeconfig
+# Add insecure-skip-tls-verify if not present
+if ! grep -q "insecure-skip-tls-verify" /home/candidate/.kube/kubeconfig; then
+    sed -i '/server: https:\/\/k8s-api-server:6445/a\    insecure-skip-tls-verify: true' /home/candidate/.kube/kubeconfig
+fi
 echo "$(date '+%Y-%m-%d %H:%M:%S') | ✅ Kubeconfig updated to use k8s-api-server:6445 with insecure-skip-tls-verify"
 
 export KUBECONFIG=/home/candidate/.kube/kubeconfig
