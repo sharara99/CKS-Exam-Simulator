@@ -8,10 +8,31 @@ function processQuestionContent(content) {
     // First, preserve existing HTML formatting
     let processedContent = content;
     
-    // Add click-to-copy functionality for URLs (simple approach)
+    // Add click-to-copy functionality for URLs (improved to handle URLs on their own lines)
+    // Process URLs first, before other patterns that might interfere
+    // Match URLs that may be on their own line or within text
     processedContent = processedContent.replace(
-        /(https?:\/\/[^\s<>"{}|\\^`[\]]+)/g,
-        '<span class="clickable-url" data-copy-text="$1" title="Click to copy URL">$1</span>'
+        /(https?:\/\/[a-zA-Z0-9\-._~:/?#[\]@!$&'()*+,;=%]+)/g,
+        function(match) {
+            // Skip if already inside an HTML tag
+            if (match.includes('<') || match.includes('>')) {
+                return match;
+            }
+            return '<span class="clickable-url" data-copy-text="' + match + '" title="Click to copy URL">' + match + '</span>';
+        }
+    );
+    
+    // Add click-to-copy functionality for sysctl parameters (net.*=value format)
+    // Handle both standalone and list item formats (with leading dash)
+    processedContent = processedContent.replace(
+        /(-?\s*)(net\.[a-zA-Z0-9._-]+=[0-9]+)/g,
+        function(match, prefix, param) {
+            // Skip if already inside an HTML tag
+            if (match.includes('<') || match.includes('>')) {
+                return match;
+            }
+            return prefix + '<span class="clickable-sysctl" data-copy-text="' + param + '" title="Click to copy sysctl parameter">' + param + '</span>';
+        }
     );
     
     // Add click-to-copy functionality for kubectl commands

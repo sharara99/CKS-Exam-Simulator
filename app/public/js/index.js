@@ -42,6 +42,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (data && data.id) {
                     // Store current exam data in localStorage for the View Results functionality
                     localStorage.setItem('currentExamData', JSON.stringify(data));
+                    localStorage.setItem('currentExamId', data.id);
                     
                     // Show View Results button only if status is EVALUATING or EVALUATED
                     if (data.status === 'EVALUATING' || data.status === 'EVALUATED') {
@@ -50,19 +51,25 @@ document.addEventListener('DOMContentLoaded', function() {
                         }
                     }
                     
+                    // If exam is READY, redirect immediately to exam page
+                    if (data.status === 'READY') {
+                        console.log('Exam is READY, redirecting to exam page');
+                        // Ensure exam ID is stored
+                        localStorage.setItem('currentExamId', data.id);
+                        window.location.href = `/exam.html?id=${data.id}`;
+                        return;
+                    }
+                    
                     // If exam is in PREPARING state, show loading overlay and start polling
-                    if (data.status === 'PREPARING') {
-                        console.log('Exam is in PREPARING state, showing loading overlay');
+                    if (data.status === 'PREPARING' || data.status === 'PREPARATION_FAILED') {
+                        console.log('Exam is in', data.status, 'state, showing loading overlay');
+                        // Ensure exam ID is stored for refresh scenarios
+                        localStorage.setItem('currentExamId', data.id);
                         showLoadingOverlay();
                         updateLoadingMessage('Preparing lab environment...');
                         updateExamInfo(data.info?.name || 'Unknown Exam');
-                        // Start polling for status
-                        pollExamStatus(data.id).then(statusData => {
-                            if (statusData.status === 'READY') {
-                                // Redirect to exam page when ready
-                                window.location.href = `/exam.html?id=${data.id}`;
-                            }
-                        });
+                        // Start polling for status - redirect is handled inside pollExamStatus
+                        pollExamStatus(data.id);
                     }
                 }
             })
@@ -258,7 +265,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 return response.json();
             })
             .then(data => {
-                labs = data;
+                // Filter to only show CKA 2025 Real Exam
+                labs = data.filter(lab => lab.id === 'cka-2025-real');
                 console.log('Labs loaded successfully, count:', labs.length);
                 if (showLoader) {
                     pageLoader.style.display = 'none';
@@ -277,25 +285,15 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Populate the lab categories dropdown
     function populateLabCategories() {
-        // Get unique categories
-        const categories = [...new Set(labs.map(lab => lab.category))];
-        
-        // If CKA is available, select it by default (prioritize CKA 2025 questions)
-        if (categories.includes('CKA')) {
-            examCategorySelect.value = 'CKA';
-            filterLabsByCategory('CKA');
-        } else if (categories.includes('CKAD')) {
-            examCategorySelect.value = 'CKAD';
-            filterLabsByCategory('CKAD');
-        } else if (categories.length > 0) {
-            examCategorySelect.value = categories[0];
-            filterLabsByCategory(categories[0]);
-        }
+        // Set CKA as the only option and auto-select it
+        examCategorySelect.value = 'CKA';
+        filterLabsByCategory('CKA');
     }
     
     // Filter labs by category and populate the labs dropdown
     function filterLabsByCategory(category) {
-        const filteredLabs = labs.filter(lab => lab.category === category);
+        // Filter to only show CKA 2025 Real Exam
+        const filteredLabs = labs.filter(lab => lab.category === category && lab.id === 'cka-2025-real');
         
         // Clear existing options
         examNameSelect.innerHTML = '<option value="">Select a lab</option>';
@@ -422,13 +420,15 @@ document.addEventListener('DOMContentLoaded', function() {
                 const warmUpTime = data.warmUpTimeInSeconds || 30;
                 updateLoadingMessage(`Preparing your lab environment (${warmUpTime}s estimated)`);
                 
-                // Poll for exam status until it's ready
+                // Poll for exam status until it's ready - redirect is handled inside pollExamStatus
                 return pollExamStatus(data.id);
             })
             .then(() => {
-                // Redirect to the lab page after status is READY
-                const examId = localStorage.getItem('currentExamId');
-                window.location.href = `/exam.html?id=${examId}`;
+                // Redirect already happened in pollExamStatus, but keep this as fallback
+                const examId = localStorage.getItem('currentExamId') || data.id;
+                if (examId) {
+                    window.location.href = `/exam.html?id=${examId}`;
+                }
             })
             .catch(error => {
                 console.error('Error starting lab:', error);
@@ -461,12 +461,35 @@ document.addEventListener('DOMContentLoaded', function() {
 
     async function pollExamStatus(examId) {
         const startTime = Date.now();
-        const pollInterval = 1000; // Poll every 1 second
+        const pollInterval = 2000; // Poll every 2 seconds
+        const maxWaitTime = 5 * 60 * 1000; // Maximum 5 minutes
+        const refreshAfterTime = 3 * 60 * 1000; // Auto-refresh after 3 minutes if still preparing
+        let firstPreparingTime = Date.now();
+        
+        // Check if we've already refreshed once (to prevent infinite refresh loop)
+        const refreshKey = `exam_refresh_${examId}`;
+        const hasRefreshed = sessionStorage.getItem(refreshKey) === 'true';
         
         return new Promise((resolve, reject) => {
             const poll = async () => {
                 try {
+                    const elapsedTime = Date.now() - startTime;
+                    
+                    // Check if we've exceeded maximum wait time
+                    if (elapsedTime > maxWaitTime) {
+                        updateLoadingMessage('Preparation is taking longer than expected. Refreshing page...');
+                        // Auto-refresh after 2 seconds
+                        setTimeout(() => {
+                            localStorage.setItem('currentExamId', examId);
+                            window.location.reload();
+                        }, 2000);
+                        return;
+                    }
+                    
                     const response = await fetch(`/facilitator/api/v1/exams/${examId}/status`);
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! Status: ${response.status}`);
+                    }
                     const data = await response.json();
                     
                     // set warmup time in seconds
@@ -476,16 +499,211 @@ document.addEventListener('DOMContentLoaded', function() {
                         // Set progress to 100% when ready
                         updateProgressBar(100);
                         updateLoadingMessage('Lab environment is ready! Redirecting...');
-                        // Wait a moment for the user to see the 100% progress
-                        setTimeout(() => resolve(data), 1000);
+                        // Wait a moment for the user to see the 100% progress, then redirect
+                        setTimeout(() => {
+                            // Redirect to exam page with the exam ID
+                            window.location.href = `/exam.html?id=${examId}`;
+                            resolve(data);
+                        }, 1000);
                         return;
                     }
                     
+                    // Handle PREPARING status - add timeout and refresh mechanism
+                    if (data.status === 'PREPARING') {
+                        const timeSincePreparing = Date.now() - firstPreparingTime;
+                        
+                        // If preparing for more than refresh time and haven't refreshed, refresh once
+                        if (timeSincePreparing >= refreshAfterTime && !hasRefreshed) {
+                            console.log('PREPARING for 3+ minutes, refreshing page once...');
+                            // Mark that we've refreshed to prevent infinite loop
+                            sessionStorage.setItem(refreshKey, 'true');
+                            updateLoadingMessage('Preparation is taking longer than expected. Refreshing to check status...');
+                            setTimeout(() => {
+                                // Store exam ID in localStorage before reload so it can be used after refresh
+                                localStorage.setItem('currentExamId', examId);
+                                // Reload the page - it will check status and redirect if READY
+                                window.location.reload();
+                            }, 2000);
+                            return;
+                        }
+                        
+                        // If already refreshed once and still preparing, check if exam is actually ready
+                        if (hasRefreshed && timeSincePreparing >= refreshAfterTime) {
+                            // Try to check if exam is actually ready despite the status
+                            console.log('Already refreshed once, checking if exam is actually ready...');
+                            updateLoadingMessage('Checking if exam is ready...');
+                            
+                            // Try to access exam page directly - if it works, redirect
+                            fetch(`/facilitator/api/v1/exams/${examId}/questions`)
+                                .then(response => {
+                                    if (response.ok) {
+                                        // Exam questions are available, try redirecting
+                                        console.log('Exam questions available, redirecting to exam page...');
+                                        updateLoadingMessage('Exam is ready! Redirecting...');
+                                        setTimeout(() => {
+                                            window.location.href = `/exam.html?id=${examId}`;
+                                        }, 1000);
+                                    } else {
+                                        // Still not ready, show detailed status with countdown
+                                        const remainingTime = Math.max(0, maxWaitTime - elapsedTime);
+                                        const minutesRemaining = Math.ceil(remainingTime / 60000);
+                                        const elapsedTimeSeconds = elapsedTime / 1000;
+                                        
+                                        let statusMessage = '';
+                                        if (elapsedTimeSeconds < 60) {
+                                            statusMessage = 'Creating Kubernetes cluster...';
+                                        } else if (elapsedTimeSeconds < 90) {
+                                            statusMessage = 'API server ready, downloading exam assets...';
+                                        } else {
+                                            statusMessage = `Finalizing preparation... (Auto-refresh in ${minutesRemaining} min)`;
+                                        }
+                                        
+                                        updateLoadingMessage(statusMessage);
+                                    }
+                                })
+                                .catch(() => {
+                                    const remainingTime = Math.max(0, maxWaitTime - elapsedTime);
+                                    const minutesRemaining = Math.ceil(remainingTime / 60000);
+                                    updateLoadingMessage(`Preparation in progress. Please wait... (Auto-refresh in ${minutesRemaining} min)`);
+                                });
+                            setTimeout(poll, pollInterval);
+                            return;
+                        }
+                        
+                        // Calculate progress and show message
+                        const elapsedTimeSeconds = elapsedTime / 1000;
+                        const progress = Math.min((elapsedTimeSeconds / warmUpTimeInSeconds) * 100, 95);
+                        updateProgressBar(progress);
+                        
+                        // Show detailed status messages based on elapsed time
+                        let statusMessage = '';
+                        if (elapsedTimeSeconds < 10) {
+                            statusMessage = 'Initializing exam environment...';
+                        } else if (elapsedTimeSeconds < 30) {
+                            statusMessage = 'Creating Kubernetes cluster...';
+                        } else if (elapsedTimeSeconds < 60) {
+                            statusMessage = 'Kubernetes cluster created, waiting for API server...';
+                        } else if (elapsedTimeSeconds < 90) {
+                            statusMessage = 'API server ready, downloading exam assets...';
+                        } else if (elapsedTimeSeconds < 120) {
+                            statusMessage = 'Extracting exam assets and preparing questions...';
+                        } else if (elapsedTimeSeconds < 150) {
+                            statusMessage = 'Running setup scripts and configuring environment...';
+                        } else {
+                            // Show countdown if approaching refresh time
+                            if (timeSincePreparing >= refreshAfterTime - 60000) {
+                                const remainingTime = Math.max(0, refreshAfterTime - timeSincePreparing);
+                                const minutesRemaining = Math.ceil(remainingTime / 60000);
+                                statusMessage = `Finalizing preparation... (Auto-refresh in ${minutesRemaining} min)`;
+                            } else {
+                                statusMessage = 'Finalizing exam environment setup...';
+                            }
+                        }
+                        
+                        updateLoadingMessage(statusMessage);
+                        
+                        setTimeout(poll, pollInterval);
+                        return;
+                    }
+                    
+                    // Handle PREPARATION_FAILED status
+                    if (data.status === 'PREPARATION_FAILED') {
+                        const timeSinceFailed = Date.now() - firstPreparingTime;
+                        
+                        // If failed for more than refresh time and haven't refreshed, refresh once
+                        if (timeSinceFailed >= refreshAfterTime && !hasRefreshed) {
+                            console.log('PREPARATION_FAILED for 3+ minutes, refreshing page once...');
+                            sessionStorage.setItem(refreshKey, 'true');
+                            updateLoadingMessage('Preparation encountered an issue. Refreshing to check status...');
+                            setTimeout(() => {
+                                localStorage.setItem('currentExamId', examId);
+                                window.location.reload();
+                            }, 2000);
+                            return;
+                        }
+                        
+                        // If already refreshed once and still failed, check if exam is actually ready
+                        if (hasRefreshed && timeSinceFailed >= refreshAfterTime) {
+                            console.log('Already refreshed once, checking if exam is actually ready...');
+                            updateLoadingMessage('Checking exam status...');
+                            
+                            fetch(`/facilitator/api/v1/exams/${examId}/questions`)
+                                .then(response => {
+                                    if (response.ok) {
+                                        console.log('Exam questions available, redirecting to exam page...');
+                                        updateLoadingMessage('Exam is ready! Redirecting...');
+                                        setTimeout(() => {
+                                            window.location.href = `/exam.html?id=${examId}`;
+                                        }, 1000);
+                                    } else {
+                                        const remainingTime = Math.max(0, maxWaitTime - elapsedTime);
+                                        const minutesRemaining = Math.ceil(remainingTime / 60000);
+                                        updateLoadingMessage(`Preparation in progress. Please wait... (Auto-refresh in ${minutesRemaining} min)`);
+                                    }
+                                })
+                                .catch(() => {
+                                    const remainingTime = Math.max(0, maxWaitTime - elapsedTime);
+                                    const minutesRemaining = Math.ceil(remainingTime / 60000);
+                                    updateLoadingMessage(`Preparation in progress. Please wait... (Auto-refresh in ${minutesRemaining} min)`);
+                                });
+                            setTimeout(poll, pollInterval);
+                            return;
+                        }
+                        
+                        // Continue polling with longer interval (5 seconds) when failed
+                        const remainingTime = Math.max(0, refreshAfterTime - timeSinceFailed);
+                        const minutesRemaining = Math.ceil(remainingTime / 60000);
+                        const elapsedTimeSeconds = elapsedTime / 1000;
+                        
+                        // Show detailed status even when failed, based on elapsed time
+                        let statusMessage = '';
+                        if (elapsedTimeSeconds < 10) {
+                            statusMessage = 'Initializing exam environment...';
+                        } else if (elapsedTimeSeconds < 30) {
+                            statusMessage = 'Creating Kubernetes cluster...';
+                        } else if (elapsedTimeSeconds < 60) {
+                            statusMessage = 'Kubernetes cluster created, waiting for API server...';
+                        } else if (elapsedTimeSeconds < 90) {
+                            statusMessage = 'API server ready, downloading exam assets...';
+                        } else if (elapsedTimeSeconds < 120) {
+                            statusMessage = 'Extracting exam assets and preparing questions...';
+                        } else {
+                            statusMessage = `Retrying preparation... (Auto-refresh in ${minutesRemaining} min)`;
+                        }
+                        
+                        updateLoadingMessage(statusMessage);
+                        updateProgressBar(Math.min((elapsedTime / maxWaitTime) * 100, 95));
+                        setTimeout(poll, 5000); // Poll every 5 seconds when failed
+                        return;
+                    }
+                    
+                    // Reset preparing time if status changed
+                    if (data.status !== 'PREPARING' && data.status !== 'PREPARATION_FAILED') {
+                        firstPreparingTime = Date.now();
+                    }
+                    
                     // Calculate progress based on warm-up time
-                    const elapsedTime = (Date.now() - startTime) / 1000;
-                    const progress = Math.min((elapsedTime / warmUpTimeInSeconds) * 100, 95);
+                    const elapsedTimeSeconds = elapsedTime / 1000;
+                    const progress = Math.min((elapsedTimeSeconds / warmUpTimeInSeconds) * 100, 95);
                     updateProgressBar(progress);
-                    updateLoadingMessage(data.message || 'Preparing lab environment...');
+                    
+                    // Show detailed status messages based on elapsed time
+                    let statusMessage = '';
+                    if (elapsedTimeSeconds < 10) {
+                        statusMessage = 'Initializing exam environment...';
+                    } else if (elapsedTimeSeconds < 30) {
+                        statusMessage = 'Creating Kubernetes cluster...';
+                    } else if (elapsedTimeSeconds < 60) {
+                        statusMessage = 'Kubernetes cluster created, waiting for API server...';
+                    } else if (elapsedTimeSeconds < 90) {
+                        statusMessage = 'API server ready, downloading exam assets...';
+                    } else if (elapsedTimeSeconds < 120) {
+                        statusMessage = 'Extracting exam assets and preparing questions...';
+                    } else {
+                        statusMessage = 'Running setup scripts and configuring environment...';
+                    }
+                    
+                    updateLoadingMessage(statusMessage);
                     
                     // Continue polling
                     setTimeout(poll, pollInterval);
