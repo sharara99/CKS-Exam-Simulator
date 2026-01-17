@@ -73,7 +73,7 @@
       "id": "4",
       "namespace": "argocd",
       "machineHostname": "ckad9999",
-      "question": "Argo CD with Helm\n\nTask: Generate a Helm template for Argo CD (v7.7.3) in namespace argocd without CRDs.\n\nSteps:\n1. Add Argo Helm repository\n2. Update Helm repositories\n3. Generate template for Argo CD v7.7.3\n4. Save template to /argo-helm.yaml\n5. Ensure CRDs are not included\n\nVerify the template is generated correctly.",
+      "question": "Argo CD with Helm\n\nTask: Generate a Helm template for Argo CD (v7.7.3) in namespace argocd without CRDs.\n\nSteps:\n1. Add Argo Helm repository:\n   https://argoproj.github.io/argo-helm\n2. Update Helm repositories\n3. Generate template for Argo CD v7.7.3\n4. Save template to /argo-helm.yaml\n5. Ensure CRDs are not included\n\nVerify the template is generated correctly.",
       "concepts": ["helm", "argo cd", "templates", "CRDs"],
       "verification": [
         {
