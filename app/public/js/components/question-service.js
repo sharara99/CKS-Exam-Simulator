@@ -13,13 +13,15 @@ function processQuestionContent(content) {
     // https://github.com/Mirantis/cri-dockerd/releases/download/v0.3.9/cri-dockerd_0.3.9.3-0.ubuntu-jammy_amd64.deb
     // https://raw.githubusercontent.com/projectcalico/calico/v3.29.2/manifests/tigera-operator.yaml
     processedContent = processedContent.replace(
-        /(https?:\/\/[^\s<>"{}|\\^`\[\]]+)/g,
+        /(https?:\/\/[^\s<>"{}|\\^`]+)/g,
         function(match) {
             // Skip if already inside an HTML tag
             if (match.includes('<') || match.includes('>')) {
                 return match;
             }
-            return '<span class="clickable-filepath" data-copy-text="' + match + '" title="Click to copy URL">' + match + '</span>';
+            // Remove trailing punctuation that might not be part of the URL (but keep valid URL chars like /, :, etc.)
+            const cleanedMatch = match.replace(/[.,;!?]+$/, '');
+            return '<span class="clickable-filepath" data-copy-text="' + cleanedMatch + '" title="Click to copy URL">' + cleanedMatch + '</span>';
         }
     );
     
