@@ -166,6 +166,8 @@ EOF
 
 # ---------------------------------------------------------------------------
 # Q11: code – deployment code-server (student creates TLS secret and mounts it)
+# Note: TLS cert files need to be created on the node at /root/custom-cert.crt and /root/custom-key.key
+# This is handled by q11_setup.sh which creates a job to generate them
 # ---------------------------------------------------------------------------
 echo "$(date '+%Y-%m-%d %H:%M:%S') | Creating Q11: code-server deployment..."
 cat <<EOF | kubectl apply -f -
@@ -189,6 +191,102 @@ spec:
         image: nginx:alpine
         ports:
         - containerPort: 80
+EOF
+
+# ---------------------------------------------------------------------------
+# Q13: Falco – deployment that uses /dev/x folder (student finds and scales to zero)
+# ---------------------------------------------------------------------------
+echo "$(date '+%Y-%m-%d %H:%M:%S') | Creating Q13: dev-x-app deployment..."
+cat <<EOF | kubectl apply -f -
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dev-x-app
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: dev-x-app
+  template:
+    metadata:
+      labels:
+        app: dev-x-app
+    spec:
+      containers:
+      - name: app
+        image: busybox:stable
+        command: ["sleep", "3600"]
+        volumeMounts:
+        - name: dev-x
+          mountPath: /dev/x
+      volumes:
+      - name: dev-x
+        hostPath:
+          path: /dev/x
+          type: DirectoryOrCreate
+EOF
+
+# ---------------------------------------------------------------------------
+# Q3 & Q14: ImagePolicyWebhook – webhook server deployment
+# ---------------------------------------------------------------------------
+echo "$(date '+%Y-%m-%d %H:%M:%S') | Creating Q3/Q14: ImagePolicyWebhook webhook server..."
+kubectl create namespace team-white --dry-run=client -o yaml | kubectl apply -f -
+kubectl create secret tls tls-image-bouncer-webhook \
+  --cert=/dev/null \
+  --key=/dev/null \
+  -n team-white \
+  --dry-run=client -o yaml | kubectl apply -f - 2>/dev/null || true
+
+cat <<EOF | kubectl apply -f -
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: image-bouncer-webhook
+  name: image-bouncer-webhook
+  namespace: team-white
+spec:
+  type: NodePort
+  ports:
+  - name: https
+    port: 443
+    targetPort: 1323
+    protocol: TCP
+    nodePort: 30080
+  selector:
+    app: image-bouncer-webhook
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: image-bouncer-webhook
+  namespace: team-white
+spec:
+  selector:
+    matchLabels:
+      app: image-bouncer-webhook
+  template:
+    metadata:
+      labels:
+        app: image-bouncer-webhook
+    spec:
+      containers:
+      - name: image-bouncer-webhook
+        imagePullPolicy: Always
+        image: "kainlite/kube-image-bouncer:latest"
+        args:
+        - "--cert=/etc/admission-controller/tls/tls.crt"
+        - "--key=/etc/admission-controller/tls/tls.key"
+        - "--debug"
+        - "--registry-whitelist=docker.io,registry.k8s.io"
+        volumeMounts:
+        - name: tls
+          mountPath: /etc/admission-controller/tls
+      volumes:
+      - name: tls
+        secret:
+          secretName: tls-image-bouncer-webhook
 EOF
 
 # ---------------------------------------------------------------------------
@@ -230,15 +328,17 @@ kubectl expose deployment rocket-server --port=80 --target-port=80 -n space --na
 # Wait for deployments to be available (best effort)
 # ---------------------------------------------------------------------------
 echo "$(date '+%Y-%m-%d %H:%M:%S') | Waiting for deployments..."
-for ns in immutable-app dual-container team-sedum development naboo qa team-coral code space; do
+for ns in immutable-app dual-container team-sedum development naboo qa team-coral code space team-white; do
   for d in $(kubectl get deploy -n "$ns" -o name 2>/dev/null); do
     kubectl wait --for=condition=available --timeout=60s "$d" -n "$ns" 2>/dev/null || true
   done
 done
 # restricted web-server will stay 0/1 until student fixes PSS – that's expected
 kubectl wait --for=condition=available --timeout=10s deployment/web-server -n restricted 2>/dev/null || true
+# dev-x-app in default namespace
+kubectl wait --for=condition=available --timeout=60s deployment/dev-x-app -n default 2>/dev/null || true
 
 echo "$(date '+%Y-%m-%d %H:%M:%S') | CKS 2026 setup completed."
-echo "Namespaces: development, naboo, qa, team-sedum, team-coral, code, restricted, space, immutable-app, dual-container"
-echo "Resources: app-to-secure, dual-app, one, two, dev-app, naboo-app, qa-app, stream-multiplex, code-server, web-server, rocket-server"
+echo "Namespaces: development, naboo, qa, team-sedum, team-coral, code, restricted, space, immutable-app, dual-container, team-white"
+echo "Resources: app-to-secure, dual-app, one, two, dev-app, naboo-app, qa-app, stream-multiplex, code-server, web-server, rocket-server, dev-x-app, image-bouncer-webhook"
 exit 0

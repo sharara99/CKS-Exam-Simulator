@@ -4,7 +4,7 @@
       "id": "1",
       "namespace": "default",
       "machineHostname": "ckad9999",
-      "question": "CIS Benchmark – Kubelet\n\nApply CIS benchmark settings for kubelet:\n- In kubelet config: set anonymous auth to false (in config file), use Webhook for authorization mode.\n- In etcd manifest (`/etc/kubernetes/manifests/etcd.yaml`): add `--client-cert-auth=true` and `--peer-client-cert-auth=true`; remove `--insecure-listen-address`.\n\nUse `kubectl -n kube-system edit cm kubelet-config`, then `kubeadm upgrade node phase kubelet-config`, then `service kubelet restart`.",
+      "question": "CIS Benchmark – Kubelet\n\nApply CIS benchmark settings for kubelet:\n\n- In kubelet config: set anonymous auth to false (in config file), use Webhook for authorization mode.\n- In etcd manifest (`/etc/kubernetes/manifests/etcd.yaml`):\n  - Add: `--client-cert-auth=true` and `--peer-client-cert-auth=true`\n  - Remove: `--insecure-listen-address`\n\n`kubectl -n kube-system edit cm kubelet-config`\n`kubeadm upgrade node phase kubelet-config`\n`service kubelet restart`",
       "concepts": ["CIS benchmark", "kubelet", "etcd", "security"],
       "verification": [
         {
@@ -20,7 +20,7 @@
       "id": "2",
       "namespace": "default",
       "machineHostname": "ckad9999",
-      "question": "Remove Anonymous Access to API Server\n\nConfigure the API server to:\n- `--anonymous-auth=false`\n- `--authorization-mode=NODE,RBAC`\n- `--enable-admission-plugins=NodeRestriction`\n\nThen remove the ClusterRoleBinding named `anonymous-access` that grants anonymous access to the cluster.",
+      "question": "Remove Anonymous Access to API Server\n\nConfigure the API server:\n- `--anonymous-auth=false`\n- `--authorization-mode=NODE,RBAC`\n- `--enable-admission-plugins=NodeRestriction`\n\nThen remove the ClusterRoleBinding named `anonymous-access` that grants anonymous access to the cluster.",
       "concepts": ["apiserver", "RBAC", "anonymous-auth", "NodeRestriction"],
       "verification": [
         {
@@ -36,7 +36,7 @@
       "id": "3",
       "namespace": "default",
       "machineHostname": "ckad9999",
-      "question": "Image Policy Webhook\n\nEnable ImagePolicyWebhook in the API server using a config file:\n1. Update the config file (it's in JSON format) to implicit deny by setting parameter `defaultAllow` to `false` instead of `true`.\n2. Update kubeconfig file to point to webhook server URL shared in the question.\n3. Update kube-apiserver manifest to enable image policy plugin:\n   `--enable-admission-plugins=ImagePolicyWebhook`\n   `--admission-control-config-file=<path of config file>`",
+      "question": "Image Policy Webhook\n\nEnable ImagePolicyWebhook in the API server and use config file:\n\n1. Update config file (it's in JSON format) to implicit deny by setting parameter `defaultAllow` to `false` instead of `true`\n2. Update kubeconfig file to point to webhook server URL shared in the question\n3. Update kube-apiserver manifest to enable image policy plugin:\n   `--enable-admission-plugins=ImagePolicyWebhook`\n   `--admission-control-config-file=<path of config file>`",
       "concepts": ["ImagePolicyWebhook", "admission control", "apiserver"],
       "verification": [
         {
@@ -68,7 +68,7 @@
       "id": "5",
       "namespace": "default",
       "machineHostname": "ckad9999",
-      "question": "Deployment – Security Context (2 containers)\n\nUpdate deployment that has 2 containers with security context in each pod with the below:\n- `runAsUser: 30000`\n- `allowPrivilegeEscalation: false`\n- `readOnlyRootFilesystem: true`",
+      "question": "Deployment – Security Context (2 containers)\n\nUpdate deployment that has 2 containers with security context in each pod:\n- `runAsUser: 30000`\n- `allowPrivilegeEscalation: false`\n- `readOnlyRootFilesystem: true`",
       "concepts": ["deployments", "securityContext", "runAsUser", "allowPrivilegeEscalation"],
       "verification": [
         {
@@ -84,7 +84,7 @@
       "id": "6",
       "namespace": "team-sedum",
       "machineHostname": "ckad9999",
-      "question": "Istio Security and mTLS\n\nIstio has been installed in the cluster. Enable Istio sidecar injection for the whole Namespace and ensure all current and future Pods are running with the Istio proxy sidecar.\n\nUse: `kubectl get ns --show-labels`, `kubectl label ns team-sedum istio-injection=enabled`, then `kubectl -n team-sedum rollout restart deploy` for all deployments.",
+      "question": "Istio Security and mTLS\n\nIstio has been installed in the cluster. Enable Istio sidecar injection for the whole Namespace and ensure all current and future Pods are running with the Istio proxy sidecar.\n\n`kubectl get ns --show-labels`\n`kubectl label ns team-sedum istio-injection=enabled`\n`kubectl -n team-sedum rollout restart deploy one`\n`kubectl -n team-sedum rollout restart deploy two`",
       "concepts": ["Istio", "sidecar injection", "mTLS"],
       "verification": [
         {
@@ -100,7 +100,7 @@
       "id": "7",
       "namespace": "development",
       "machineHostname": "ckad9999",
-      "question": "NetworkPolicy – Deny All Traffic\n\nCreate network policy that denies all egress and ingress traffic to pods in `development` namespace.\n\nUse:\n```\napiVersion: networking.k8s.io/v1\nkind: NetworkPolicy\nmetadata:\n  name: deny-all-traffic\n  namespace: development\nspec:\n  podSelector: {}\n  policyTypes:\n  - Ingress\n```",
+      "question": "NetworkPolicy – Deny All Traffic\n\nCreate network policy that denies all egress and ingress traffic to pods in `development` namespace.\n\n```\napiVersion: networking.k8s.io/v1\nkind: NetworkPolicy\nmetadata:\n  name: deny-all-traffic\n  namespace: development\nspec:\n  podSelector: {}\n  policyTypes:\n  - Ingress\n```",
       "concepts": ["NetworkPolicy", "ingress", "egress", "deny-all"],
       "verification": [
         {
@@ -116,7 +116,7 @@
       "id": "8",
       "namespace": "naboo",
       "machineHostname": "ckad9999",
-      "question": "NetworkPolicy – Allow from Stage and QA\n\nCreate network policy that allow only traffic to all pods in namespace `naboo` from pods with label `environmental: stage` and from pods in namespace `qa`.\n\nUse:\n```\napiVersion: networking.k8s.io/v1\nkind: NetworkPolicy\nmetadata:\n  name: allow-from-stage-and-qa\n  namespace: naboo\nspec:\n  podSelector: {}\n  policyTypes:\n  - Ingress\n  ingress:\n  - from:\n    - namespaceSelector:\n        matchLabels:\n          name: qa\n    - podSelector:\n        matchLabels:\n          environmental: stage\n```",
+      "question": "NetworkPolicy – Allow from Stage and QA\n\nCreate network policy that allow only traffic to all pods in namespace `naboo` from pods with label `environmental: stage` and from pods in namespace `qa`.\n\n```\napiVersion: networking.k8s.io/v1\nkind: NetworkPolicy\nmetadata:\n  name: allow-from-stage-and-qa\n  namespace: naboo\nspec:\n  podSelector: {}\n  policyTypes:\n  - Ingress\n  ingress:\n  - from:\n    - namespaceSelector:\n        matchLabels:\n          name: qa\n    - podSelector:\n        matchLabels:\n          environmental: stage\n```",
       "concepts": ["NetworkPolicy", "podSelector", "namespaceSelector"],
       "verification": [
         {
@@ -132,7 +132,7 @@
       "id": "9",
       "namespace": "default",
       "machineHostname": "ckad9999",
-      "question": "Upgrade Kubernetes\n\nUpgrade a Kubernetes node:\n- `kubectl drain <node-name> --ignore-daemonsets`\n- SSH to the node\n- `apt update`\n- `apt-mark hold kubeadm`\n- `kubeadm upgrade node`\n- `apt-mark unhold kubectl kubelet`\n- `apt install kubelet=<version> kubectl=<version>`\n- `service kubelet restart`\n- `apt-mark hold kubelet kubectl`\n- `kubectl uncordon <node-name>`",
+      "question": "Upgrade Kubernetes\n\nUpgrade a Kubernetes node:\n\n`kubectl drain <node-name> --ignore-daemonsets`\nSSH to the node\n`apt update`\n`apt-mark hold kubeadm`\n`kubeadm upgrade node`\n`apt-mark unhold kubectl kubelet`\n`apt install kubelet=<version> kubectl=<version>`\n`service kubelet restart`\n`apt-mark hold kubelet kubectl`\n`kubectl uncordon <node-name>`",
       "concepts": ["kubeadm", "upgrade", "kubelet", "drain", "uncordon"],
       "verification": [
         {
@@ -164,7 +164,7 @@
       "id": "11",
       "namespace": "code",
       "machineHostname": "ckad9999",
-      "question": "TLS Secret – Create and Mount\n\nFirst create the TLS secret:\n`kubectl create secret tls code-secret --cert=/root/custom-cert.crt --key=/root/custom-key.key -n code`\n\nThen edit the deployment to mount the secret:\n`kubectl edit deployment code-server -n code`\n\nUnder the `spec.template.spec` section, add:\n```\nvolumes:\n  - name: secret-volume\n    secret:\n      secretName: code-secret\n```\n\nUnder the `spec.template.spec.containers` section, add the volume mount:\n```\nvolumeMounts:\n  - name: secret-volume\n    mountPath: /etc/code/tls\n    readOnly: true\n```",
+      "question": "TLS Secret – Create and Mount\n\nFirst create the TLS secret:\n\n`kubectl create secret tls code-secret --cert=/root/custom-cert.crt --key=/root/custom-key.key -n code`\n\nThen edit the deployment to mount the secret:\n\n`kubectl edit deployment code-server -n code`\n\nUnder the `spec.template.spec` section, add:\n```\nvolumes:\n  - name: secret-volume\n    secret:\n      secretName: code-secret\n```\n\nUnder the `spec.template.spec.containers` section, add the volume mount:\n```\nvolumeMounts:\n  - name: secret-volume\n    mountPath: /etc/code/tls\n    readOnly: true\n```",
       "concepts": ["secrets", "TLS", "volume", "volumeMount"],
       "verification": [
         {
@@ -180,7 +180,7 @@
       "id": "12",
       "namespace": "default",
       "machineHostname": "ckad9999",
-      "question": "Docker Security\n\nRemove user from docker group:\n`gpasswd -d <username> docker`\n`newgrp $(id -gn)`\n\nSecure docker:\n- Change the ownership of the docker file: `chown root:root /var/run/docker.sock`\n- Add `--group=root` to the ExecStart of docker systemd file:\n  `systemctl edit docker`\n  Add:\n  ```\n  [Service]\n  ExecStart=\n  ExecStart=/usr/bin/dockerd --group=root\n  ```\n- Reload docker daemon: `systemctl daemon-reload` and `systemctl restart docker`\n- Modify `/etc/docker/daemon.json` to remove TCP section, keep only:\n  ```\n  {\n    \"hosts\": [\"unix:///var/run/docker.sock\"]\n  }\n  ```\n- Restart docker again.",
+      "question": "Docker Security\n\nRemove user from docker group:\n\n`gpasswd -d <username> docker`\n`newgrp $(id -gn)`\n\nSecure docker:\n\n- Change the ownership of the docker file: `chown root:root /var/run/docker.sock`\n- Add `--group=root` to the ExecStart of docker systemd file:\n  `systemctl edit docker`\n  Add:\n  ```\n  [Service]\n  ExecStart=\n  ExecStart=/usr/bin/dockerd --group=root\n  ```\n- Reload docker daemon:\n  `systemctl daemon-reload`\n  `systemctl restart docker`\n- Modify `/etc/docker/daemon.json` to remove TCP section, keep only:\n  ```\n  {\n    \"hosts\": [\"unix:///var/run/docker.sock\"]\n  }\n  ```\n- Restart docker again.",
       "concepts": ["Docker", "daemon.json", "socket", "security"],
       "verification": [
         {
@@ -212,7 +212,7 @@
       "id": "14",
       "namespace": "default",
       "machineHostname": "ckad9999",
-      "question": "ImagePolicyWebhook – AdmissionConfiguration\n\nCreate an AdmissionConfiguration at `/opt/course/12/webhook/admission-config.yaml` which contains the following ImagePolicyWebhook configuration:\n```\nimagePolicy:\n  kubeConfigFile: /etc/kubernetes/webhook/webhook.yaml\n  allowTTL: 10\n  denyTTL: 10\n  retryBackoff: 20\n  defaultAllow: true\n```\n\nConfigure the apiserver to:\n- Mount `/opt/course/12/webhook` at `/etc/kubernetes/webhook`\n- Use the AdmissionConfiguration at path `/etc/kubernetes/webhook/admission-config.yaml`\n- Enable the ImagePolicyWebhook admission plugin:\n  `--enable-admission-plugins=ImagePolicyWebhook`\n  `--admission-control-config-file=/etc/kubernetes/webhook/admission-config.yaml`\n\nFix the admission config and kubeconfig YAML files as needed.",
+      "question": "ImagePolicyWebhook – AdmissionConfiguration\n\nCreate an AdmissionConfiguration at `/opt/course/12/webhook/admission-config.yaml` which contains the following ImagePolicyWebhook configuration:\n\n```\nimagePolicy:\n  kubeConfigFile: /etc/kubernetes/webhook/webhook.yaml\n  allowTTL: 10\n  denyTTL: 10\n  retryBackoff: 20\n  defaultAllow: true\n```\n\nConfigure the apiserver to:\n- Mount `/opt/course/12/webhook` at `/etc/kubernetes/webhook`\n- Use the AdmissionConfiguration at path `/etc/kubernetes/webhook/admission-config.yaml`\n- Enable the ImagePolicyWebhook admission plugin:\n  `--enable-admission-plugins=ImagePolicyWebhook`\n  `--admission-control-config-file=/etc/kubernetes/webhook/admission-config.yaml`\n\nFix the admission config and kubeconfig YAML files as needed.",
       "concepts": ["ImagePolicyWebhook", "AdmissionConfiguration", "apiserver"],
       "verification": [
         {
@@ -228,7 +228,7 @@
       "id": "15",
       "namespace": "restricted",
       "machineHostname": "ckad9999",
-      "question": "Pod Security Standard\n\nIn namespace `restricted` (enforcing restricted Pod Security), fix the deployment `web-server` so its pods can run.\n\nSet the securityContext:\n```\nsecurityContext:\n  allowPrivilegeEscalation: false\n  capabilities:\n    drop:\n    - ALL\n  runAsNonRoot: true\n  seccompProfile:\n    type: RuntimeDefault\n```\n\nAlso, remove `runAsUser: 0`.\n\nUse: `kubectl edit deployment web-server -n restricted`",
+      "question": "Pod Security Standard\n\nIn namespace `restricted` (enforcing restricted Pod Security), fix the deployment `web-server` so its pods can run.\n\nSet the securityContext:\n```\nsecurityContext:\n  allowPrivilegeEscalation: false\n  capabilities:\n    drop:\n    - ALL\n  runAsNonRoot: true\n  seccompProfile:\n    type: RuntimeDefault\n```\n\nAlso, remove `runAsUser: 0`.\n\n`kubectl edit deployment web-server -n restricted`",
       "concepts": ["Pod Security Admission", "restricted", "securityContext"],
       "verification": [
         {
@@ -244,7 +244,7 @@
       "id": "16",
       "namespace": "default",
       "machineHostname": "ckad9999",
-      "question": "Audit Log Policy\n\nAudit Logging has been enabled in the cluster with an Audit Policy located at `/etc/kubernetes/audit/policy.yaml`.\n\nChange the configuration so that only one backup of the logs is stored.\n\nAlter the Policy in a way that it only stores logs:\n- From Secret resources, level Metadata\n- From `system:nodes` userGroups, level RequestResponse\n- Catch all other metadata logs\n\nAfter you update the Policy make sure to empty the log file so it only contains entries according to your changes, like using `echo > /etc/kubernetes/audit/logs/audit.log`.",
+      "question": "Audit Log Policy\n\nAudit Logging has been enabled in the cluster with an Audit Policy located at `/etc/kubernetes/audit/policy.yaml`.\n\nChange the configuration so that only one backup of the logs is stored.\n\nAlter the Policy in a way that it only stores logs:\n- From Secret resources, level Metadata\n- From `system:nodes` userGroups, level RequestResponse\n- Catch all other metadata logs\n\nAfter you update the Policy make sure to empty the log file so it only contains entries according to your changes:\n\n`echo > /etc/kubernetes/audit/logs/audit.log`",
       "concepts": ["audit", "audit policy", "apiserver"],
       "verification": [
         {
