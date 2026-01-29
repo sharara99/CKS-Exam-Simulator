@@ -1,6 +1,9 @@
 #!/bin/bash
 # CKS 2026 – Fast setup: creates all namespaces and K8s objects needed before solving questions
 # One script creates essential resources so the exam is ready to start
+# 
+# Note: q1_setup.sh creates all required paths and files on cluster nodes
+# (etcd.yaml, kubelet config, webhook configs, audit logs, etc.)
 
 set -e
 

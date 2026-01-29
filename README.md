@@ -46,6 +46,28 @@ To start the simulator:
    docker compose logs -f
    ```
 
+## Rebuilding Containers
+
+If you've made changes to setup scripts or other files, you need to rebuild the containers:
+
+**Option 1: Rebuild all containers**
+```bash
+docker compose down
+docker compose build --no-cache
+docker compose up -d
+```
+
+**Option 2: Rebuild specific service (e.g., facilitator)**
+```bash
+docker compose build --no-cache facilitator
+docker compose up -d facilitator
+```
+
+**Option 3: Use the rebuild script**
+```bash
+./rebuild-containers.sh
+```
+
 ## Community & Support
 
 - Join our [Discord Community](https://discord.gg/6FPQMXNgG9) for discussions and support
