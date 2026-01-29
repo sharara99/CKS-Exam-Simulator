@@ -54,12 +54,13 @@ echo "$(date '+%Y-%m-%d %H:%M:%S') | [INFO] Pre-creating k3d cluster for faster 
 if ! k3d cluster list | grep -q "cluster"; then
     echo "$(date '+%Y-%m-%d %H:%M:%S') | Creating pre-configured k3d cluster..."
     
-    # Generate optimized k3d config
+    # Generate optimized k3d config (use ckx-network so jumphost/remote-terminal can reach API)
     cat <<EOF > /tmp/k3d-config.yaml
 apiVersion: k3d.io/v1alpha5
 kind: Simple
 metadata:
   name: cluster
+network: ckx-network
 servers: 1
 agents: 1
 ports:
@@ -97,8 +98,8 @@ EOF
                 echo "$(date '+%Y-%m-%d %H:%M:%S') | Waiting 5 seconds before retry..."
                 sleep 5
             else
-                echo "$(date '+%Y-%m-%d %H:%M:%S') | ❌ All attempts failed, trying simple cluster creation with TLS SAN..."
-                k3d cluster create cluster --port "6445:6443@loadbalancer" --kubeconfig-switch-context=false --k3s-arg '--tls-san=k8s-api-server@server:0'
+                echo "$(date '+%Y-%m-%d %H:%M:%S') | ❌ All attempts failed, trying simple cluster creation with TLS SAN and network..."
+                k3d cluster create cluster --network ckx-network --port "6445:6443@loadbalancer" --kubeconfig-switch-context=false --k3s-arg '--tls-san=k8s-api-server@server:0'
             fi
         fi
     done
@@ -109,7 +110,7 @@ else
     if ! k3d cluster get cluster 2>&1 | grep -q "k8s-api-server"; then
         echo "$(date '+%Y-%m-%d %H:%M:%S') | Cluster missing TLS SAN for k8s-api-server, recreating with proper configuration..."
         k3d cluster delete cluster 2>/dev/null || true
-        k3d cluster create cluster --port "6445:6443@loadbalancer" --kubeconfig-switch-context=false --k3s-arg '--tls-san=k8s-api-server@server:0'
+        k3d cluster create cluster --network ckx-network --port "6445:6443@loadbalancer" --kubeconfig-switch-context=false --k3s-arg '--tls-san=k8s-api-server@server:0'
     fi
 fi
 
@@ -117,17 +118,17 @@ fi
 echo "$(date '+%Y-%m-%d %H:%M:%S') | Copying kubeconfig to shared volume..."
 mkdir -p /home/candidate/.kube
 k3d kubeconfig write cluster --kubeconfig-switch-context=false
-# Update the server address to use k8s-api-server (Docker service name) so it works from all containers
-# Replace any server URL with k8s-api-server:6445
-sed -i 's|server: https://[^[:space:]]*|server: https://k8s-api-server:6445|g' /home/candidate/.kube/config
+# Use k3d loadbalancer container name (on ckx-network) so jumphost/remote-terminal can reach API server
+# Loadbalancer exposes 6443 internally; k3d names it k3d-<cluster>-serverlb
+sed -i 's|server: https://[^[:space:]]*|server: https://k3d-cluster-serverlb:6443|g' /home/candidate/.kube/config
 # Remove certificate-authority-data if it exists (cannot use with insecure-skip-tls-verify)
 sed -i '/certificate-authority-data:/d' /home/candidate/.kube/config
 # Add insecure-skip-tls-verify for certificate issues (only if not already present)
 if ! grep -q "insecure-skip-tls-verify" /home/candidate/.kube/config; then
-    sed -i '/server: https:\/\/k8s-api-server:6445/a\    insecure-skip-tls-verify: true' /home/candidate/.kube/config
+    sed -i '/server: https:\/\/k3d-cluster-serverlb:6443/a\    insecure-skip-tls-verify: true' /home/candidate/.kube/config
 fi
 cp /home/candidate/.kube/config /home/candidate/.kube/kubeconfig
-echo "$(date '+%Y-%m-%d %H:%M:%S') | ✅ Kubeconfig copied and configured with k8s-api-server:6445 and insecure-skip-tls-verify"
+echo "$(date '+%Y-%m-%d %H:%M:%S') | ✅ Kubeconfig copied and configured with k3d-cluster-serverlb:6443 and insecure-skip-tls-verify"
 
 # ===============================================================================
 #   Download cri-dockerd package to /home/candidate/downloads

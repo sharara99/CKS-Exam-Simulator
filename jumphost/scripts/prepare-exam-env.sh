@@ -86,7 +86,7 @@ else
 fi
 
 #Run fast setup for speed optimization
-log "Running FAST CKA 2025 setup..."
+log "Running exam setup..."
 if [ -f "/tmp/exam-assets/scripts/setup/fast_setup.sh" ]; then
   bash "/tmp/exam-assets/scripts/setup/fast_setup.sh"
 else

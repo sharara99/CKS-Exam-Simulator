@@ -21,7 +21,7 @@ print_header() {
     echo -e "${NC}"
     echo -e "${CYAN}==============================================================${NC}"
     echo -e "${CYAN}CK-X Simulator: Kubernetes Certification Exam Simulator${NC}"
-    echo -e "${CYAN}Practice in a realistic environment for CKA, CKAD, and more${NC}"
+    echo -e "${CYAN}Practice in a realistic environment for CKS and Kubernetes certifications${NC}"
     echo -e "${CYAN}==============================================================${NC}"
     echo -e "${CYAN} Facing any issues? Please report at: https://github.com/nishanb/CK-X/issues${NC}"
     echo

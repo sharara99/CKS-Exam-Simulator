@@ -10,7 +10,7 @@
 #   ╚═════╝╚═╝  ╚═╝╚═╝  ╚═╝╚═════╝     ╚══════╝╚═╝╚═╝     ╚═╝ ╚═════╝ ╚══════╝╚═╝  ╚═╝   ╚═╝    ╚═════╝ ╚═╝  ╚═╝
 #                                                                                                                 
 # ===============================================================================
-#  Docker Compose CKAD Deployment Script
+#  Docker Compose CKS Exam Simulator Deployment Script
 #  Version: 1.0.0
 #  Author: Nishan B
 # ===============================================================================
@@ -109,7 +109,7 @@ trap 'handle_error $LINENO' ERR
 # ===============================================================================
 
 print_header "DEPLOYMENT STARTED"
-print_info "Starting deployment process for CKAD Simulator with Docker Compose"
+print_info "Starting deployment process for CKS Exam Simulator with Docker Compose"
 
 # ===============================================================================
 # DOCKER IMAGE BUILDING
@@ -199,11 +199,11 @@ TOTAL_TIME=$(elapsed_time)
 
 print_header 'DEPLOYMENT SUMMARY'
 echo -e "${STAR} ${GREEN}Deployment completed successfully!${NC}"
-echo -e "${INFO} ${CYAN}Environment:${NC}           CKAD Simulator (Docker Compose)"
+echo -e "${INFO} ${CYAN}Environment:${NC}           CKS Exam Simulator (Docker Compose)"
 echo -e "${INFO} ${CYAN}Services deployed:${NC}     5 (remote-desktop, webapp, nginx, jumphost, k8s-api-server)"
 echo -e "${INFO} ${CYAN}Total elapsed time:${NC}    ${YELLOW}${TOTAL_TIME}${NC}"
 
-echo -e "\n${STAR} ${GREEN}Your CKAD simulator is ready to use!${NC} ${STAR}\n"
+echo -e "\n${STAR} ${GREEN}Your CKS Exam Simulator is ready to use!${NC} ${STAR}\n"
 
 # ===============================================================================
 # ACCESS INFORMATION

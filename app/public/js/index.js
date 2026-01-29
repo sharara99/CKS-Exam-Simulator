@@ -265,8 +265,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 return response.json();
             })
             .then(data => {
-                // Filter to only show CKA 2025 Real Exam
-                labs = data.filter(lab => lab.id === 'cka-2025-real');
+                labs = Array.isArray(data) ? data : (data.labs || []);
                 console.log('Labs loaded successfully, count:', labs.length);
                 if (showLoader) {
                     pageLoader.style.display = 'none';
@@ -285,15 +284,15 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Populate the lab categories dropdown
     function populateLabCategories() {
-        // Set CKA as the only option and auto-select it
-        examCategorySelect.value = 'CKA';
-        filterLabsByCategory('CKA');
+        // Default to CKS (only exam available) and show its labs
+        const defaultCategory = labs.length > 0 ? labs[0].category : 'CKS';
+        examCategorySelect.value = defaultCategory;
+        filterLabsByCategory(defaultCategory);
     }
     
     // Filter labs by category and populate the labs dropdown
     function filterLabsByCategory(category) {
-        // Filter to only show CKA 2025 Real Exam
-        const filteredLabs = labs.filter(lab => lab.category === category && lab.id === 'cka-2025-real');
+        const filteredLabs = labs.filter(lab => lab.category === category);
         
         // Clear existing options
         examNameSelect.innerHTML = '<option value="">Select a lab</option>';
@@ -309,18 +308,9 @@ document.addEventListener('DOMContentLoaded', function() {
         // Enable the lab name select
         examNameSelect.disabled = false;
         
-        // If there are labs in this category, prioritize 2025 exam, then select the first one
         if (filteredLabs.length > 0) {
-            // Look for 2025 exam first
-            const exam2025 = filteredLabs.find(lab => lab.id === 'cka-2025-real');
-            if (exam2025) {
-                examNameSelect.value = exam2025.id;
-                updateLabDescription(exam2025);
-            } else {
-                // If no 2025 exam, select the first one
-                examNameSelect.value = filteredLabs[0].id;
-                updateLabDescription(filteredLabs[0]);
-            }
+            examNameSelect.value = filteredLabs[0].id;
+            updateLabDescription(filteredLabs[0]);
         } else {
             examDescription.textContent = 'No labs available for this category.';
             startSelectedExamBtn.disabled = true;

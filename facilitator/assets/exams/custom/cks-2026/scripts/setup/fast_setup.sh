@@ -1,6 +1,6 @@
 #!/bin/bash
 # CKS 2026 – Fast setup: creates all namespaces and K8s objects needed before solving questions
-# Mirrors CKA 2025 approach: one script creates essential resources so the exam is ready to start
+# One script creates essential resources so the exam is ready to start
 
 set -e
 
