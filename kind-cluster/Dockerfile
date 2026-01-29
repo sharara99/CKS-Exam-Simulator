@@ -3,8 +3,8 @@ FROM docker:dind
 # Accept build-time architecture argument
 ARG TARGETARCH
 
-#install curl, bash, kubectl, and coreutils (for timeout command)
-RUN apk add --no-cache curl bash coreutils
+#install curl, bash, kubectl, coreutils (for timeout command), and openssl (for certificate generation)
+RUN apk add --no-cache curl bash coreutils openssl
 # Install kubectl
 RUN curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl" && \
     chmod +x kubectl && \
@@ -26,6 +26,11 @@ COPY scripts/ /usr/local/bin/
 RUN chmod +x /usr/local/bin/env-setup
 RUN chmod +x /usr/local/bin/env-cleanup
 RUN chmod +x /usr/local/bin/k3d-install.sh
+
+# Copy and execute script to create exam directories and files
+COPY scripts/create-exam-files.sh /usr/local/bin/create-exam-files.sh
+RUN chmod +x /usr/local/bin/create-exam-files.sh
+RUN /usr/local/bin/create-exam-files.sh
 
 # Pre-install k3d to avoid startup delay
 # RUN /usr/local/bin/k3d-install.sh
