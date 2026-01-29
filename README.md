@@ -21,6 +21,31 @@ Watch live demo video showcasing the CK-X Simulator in action:
 
 [![CK-X Simulator Demo](https://img.youtube.com/vi/EQVGhF8x7R4/0.jpg)](https://www.youtube.com/watch?v=EQVGhF8x7R4&ab_channel=NishanB)
 
+## Quick Start
+
+To start the simulator:
+
+1. **Clone the repository:**
+   ```bash
+   git clone <repository-url>
+   cd CKS-Exam-Simulator
+   ```
+
+2. **Start the simulator:**
+   ```bash
+   docker compose up -d
+   ```
+
+3. **View creation logs (optional):**
+   If you want to see the creation logs while the services are starting up:
+   ```bash
+   docker compose up
+   ```
+   Or to view logs after starting in detached mode:
+   ```bash
+   docker compose logs -f
+   ```
+
 ## Installation
 
 #### Linux & macOS
