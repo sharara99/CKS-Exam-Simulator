@@ -63,16 +63,22 @@ export KUBECONFIG=/home/candidate/.kube/kubeconfig
 
 sleep 1
 
-#wait till api-server is ready (with timeout) - OPTIMIZED
+#wait till api-server is ready (with timeout) - Increased timeout for cluster creation
 API_CHECK_COUNT=0
+MAX_API_CHECKS=120  # 120 seconds (2 minutes) to allow cluster creation time
+log "Waiting for API server to be ready (max ${MAX_API_CHECKS}s)..."
 while ! kubectl get nodes --insecure-skip-tls-verify > /dev/null 2>&1; do
   API_CHECK_COUNT=$((API_CHECK_COUNT+1))
-  if [ $API_CHECK_COUNT -gt 15 ]; then
-    log "ERROR: API server not ready after 30 seconds"
+  if [ $((API_CHECK_COUNT % 10)) -eq 0 ]; then
+    log "Still waiting for API server... (${API_CHECK_COUNT}s elapsed)"
+  fi
+  if [ $API_CHECK_COUNT -gt $MAX_API_CHECKS ]; then
+    log "ERROR: API server not ready after ${MAX_API_CHECKS} seconds"
     exit 1
   fi
   sleep 1
 done
+log "API server is ready after ${API_CHECK_COUNT} seconds"
 
 echo "API server is ready"
 

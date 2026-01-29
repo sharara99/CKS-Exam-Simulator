@@ -34,11 +34,12 @@ RUN if [ "$TARGETARCH" = "amd64" ]; then \
     && mv kubectl /usr/local/bin/kubectl; \
     fi
 
-# Install Helm
-RUN curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 \
-    && chmod 700 get_helm.sh \
-    && ./get_helm.sh \
-    && rm get_helm.sh
+# Install Trivy (needed for CKS image scanning - question 15)
+RUN apt-get install -y wget apt-transport-https gnupg lsb-release && \
+    wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | apt-key add - && \
+    echo "deb https://aquasecurity.github.io/trivy-repo/deb $(lsb_release -sc) main" | tee -a /etc/apt/sources.list.d/trivy.list && \
+    apt-get update && \
+    apt-get install -y trivy
 
 #override docker daemon to use cfg2group
 RUN echo '{ "exec-opts": ["native.cgroupdriver=cgroupfs"] }' > /etc/docker/daemon.json
@@ -72,11 +73,8 @@ RUN chown -R candidate:candidate /home/candidate/.kube /home/candidate/.minikube
 RUN chmod 755 /home/candidate/.kube
 RUN chmod 755 /home/candidate/.minikube
 
-# Create downloads directory and download cri-dockerd package
+# Create downloads directory (cri-dockerd will be downloaded during exam setup if needed)
 RUN mkdir -p /home/candidate/downloads
-RUN wget -q https://github.com/Mirantis/cri-dockerd/releases/download/v0.3.9/cri-dockerd_0.3.9.3-0.ubuntu-jammy_amd64.deb -O /home/candidate/downloads/cri-dockerd_0.3.9.3-0.ubuntu-jammy_amd64.deb
-RUN chmod 644 /home/candidate/downloads/cri-dockerd_0.3.9.3-0.ubuntu-jammy_amd64.deb
-RUN chown candidate:candidate /home/candidate/downloads/cri-dockerd_0.3.9.3-0.ubuntu-jammy_amd64.deb
 RUN chown candidate:candidate /home/candidate/downloads
 RUN chmod 755 /home/candidate/downloads
 
@@ -101,8 +99,7 @@ RUN echo "PS1='\[\e[32m\]\u@\h:\w\$ \[\e[0m\]'" >> /home/candidate/.bashrc
 RUN echo "source /usr/share/bash-completion/bash_completion" >> /home/candidate/.bashrc && \
     echo "source <(kubectl completion bash)" >> /home/candidate/.bashrc && \
     echo "alias k=kubectl" >> /home/candidate/.bashrc && \
-    echo "complete -F __start_kubectl k" >> /home/candidate/.bashrc && \
-    echo "source <(helm completion bash)" >> /home/candidate/.bashrc
+    echo "complete -F __start_kubectl k" >> /home/candidate/.bashrc
 
 #start ssh service
 RUN useradd -r -s /usr/sbin/nologin sshd
