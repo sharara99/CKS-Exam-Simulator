@@ -112,23 +112,26 @@ else
         k3d cluster delete cluster 2>/dev/null || true
         k3d cluster create cluster --network ckx-network --port "6445:6443@loadbalancer" --kubeconfig-switch-context=false --k3s-arg '--tls-san=k8s-api-server@server:0'
     fi
+    # Always update kubeconfig even if cluster already exists (in case it was updated)
+    echo "$(date '+%Y-%m-%d %H:%M:%S') | Updating kubeconfig for existing cluster..."
+    k3d kubeconfig write cluster --kubeconfig-switch-context=false
 fi
 
 # Copy and fix kubeconfig to shared volume
 echo "$(date '+%Y-%m-%d %H:%M:%S') | Copying kubeconfig to shared volume..."
 mkdir -p /home/candidate/.kube
 k3d kubeconfig write cluster --kubeconfig-switch-context=false
-# Use k3d loadbalancer container name (on ckx-network) so jumphost/remote-terminal can reach API server
-# Loadbalancer exposes 6443 internally; k3d names it k3d-<cluster>-serverlb
-sed -i 's|server: https://[^[:space:]]*|server: https://k3d-cluster-serverlb:6443|g' /home/candidate/.kube/config
+# Use Docker Compose service name (k8s-api-server) which is on ckx-network and accessible from jumphost
+# The k3d loadbalancer port 6443 is mapped to host port 6445, accessible via service name
+sed -i 's|server: https://[^[:space:]]*|server: https://k8s-api-server:6445|g' /home/candidate/.kube/config
 # Remove certificate-authority-data if it exists (cannot use with insecure-skip-tls-verify)
 sed -i '/certificate-authority-data:/d' /home/candidate/.kube/config
 # Add insecure-skip-tls-verify for certificate issues (only if not already present)
 if ! grep -q "insecure-skip-tls-verify" /home/candidate/.kube/config; then
-    sed -i '/server: https:\/\/k3d-cluster-serverlb:6443/a\    insecure-skip-tls-verify: true' /home/candidate/.kube/config
+    sed -i '/server: https:\/\/k8s-api-server:6445/a\    insecure-skip-tls-verify: true' /home/candidate/.kube/config
 fi
 cp /home/candidate/.kube/config /home/candidate/.kube/kubeconfig
-echo "$(date '+%Y-%m-%d %H:%M:%S') | ✅ Kubeconfig copied and configured with k3d-cluster-serverlb:6443 and insecure-skip-tls-verify"
+echo "$(date '+%Y-%m-%d %H:%M:%S') | ✅ Kubeconfig copied and configured with k8s-api-server:6445 and insecure-skip-tls-verify"
 
 # ===============================================================================
 #   Download cri-dockerd package to /home/candidate/downloads
@@ -145,30 +148,27 @@ else
 fi
 
 # ===============================================================================
-#   Setup CKA Exam Resources
+#   CKS Exam Resources Setup
+#   Note: CKS resources are created by exam setup scripts (fast_setup.sh, q*_setup.sh)
+#   CKA resources are not needed for CKS exam
 # ===============================================================================
-echo "$(date '+%Y-%m-%d %H:%M:%S') | Setting up CKA exam resources..."
-if [ -f /usr/local/bin/cka-resources-setup.sh ]; then
-    /usr/local/bin/cka-resources-setup.sh
-else
-    echo "$(date '+%Y-%m-%d %H:%M:%S') | [WARNING] CKA resources setup script not found"
-fi
+echo "$(date '+%Y-%m-%d %H:%M:%S') | CKS exam resources will be created by exam setup scripts"
 
 # ===============================================================================
 #   Auto-open Exam Interface
 # ===============================================================================
-echo "$(date '+%Y-%m-%d %H:%M:%S') | 🚀 Auto-opening CKA exam interface..."
+echo "$(date '+%Y-%m-%d %H:%M:%S') | 🚀 Auto-opening CKS exam interface..."
 echo "$(date '+%Y-%m-%d %H:%M:%S') | 📋 Exam Environment Ready!"
 echo "$(date '+%Y-%m-%d %H:%M:%S') | 🌐 Opening exam interface at: http://localhost:30080"
-echo "$(date '+%Y-%m-%d %H:%M:%S') | 📝 Lab: CKA 2025 Real Exam Questions | Difficulty: Hard"
-echo "$(date '+%Y-%m-%d %H:%M:%S') | ✅ All 16 questions with resources are ready for practice"
+echo "$(date '+%Y-%m-%d %H:%M:%S') | 📝 Lab: CKS 2026 Exam | Difficulty: Hard"
+echo "$(date '+%Y-%m-%d %H:%M:%S') | ✅ Kubernetes cluster ready for CKS exam"
 
 # Create a simple HTML page to redirect to the exam
 cat <<EOF > /tmp/exam-ready.html
 <!DOCTYPE html>
 <html>
 <head>
-    <title>CKA 2025 Exam Ready</title>
+    <title>CKS 2026 Exam Ready</title>
     <meta http-equiv="refresh" content="2;url=http://localhost:30080">
     <style>
         body { 
@@ -206,13 +206,13 @@ cat <<EOF > /tmp/exam-ready.html
 </head>
 <body>
     <div class="container">
-        <h1>🎉 CKA 2025 Exam Environment Ready!</h1>
+        <h1>🎉 CKS 2026 Exam Environment Ready!</h1>
         <div class="spinner"></div>
         <div class="status">
             <p>✅ Kubernetes cluster is running</p>
-            <p>✅ All 16 exam questions with resources created</p>
-            <p>✅ NetworkPolicies, Deployments, Services ready</p>
-            <p>✅ StorageClass and ConfigMaps configured</p>
+            <p>✅ CKS exam environment configured</p>
+            <p>✅ Security-focused resources ready</p>
+            <p>✅ Exam questions will be loaded on exam start</p>
         </div>
         <div class="redirect">
             <p>Redirecting to exam interface in 2 seconds...</p>

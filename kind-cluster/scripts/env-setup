@@ -48,19 +48,19 @@ if k3d cluster list | grep -q "$CLUSTER_NAME"; then
     echo "$(date '+%Y-%m-%d %H:%M:%S') | Skipping cluster creation to save time"
     # Still need to ensure kubeconfig is correct even when reusing cluster
     k3d kubeconfig write $CLUSTER_NAME --kubeconfig-switch-context=false
-    # Update kubeconfig to use loadbalancer container name
+    # Update kubeconfig to use Docker Compose service name
     if [ -f /home/candidate/.kube/config ]; then
-        sed -i 's|server: https://[^[:space:]]*|server: https://k3d-cluster-serverlb:6443|g' /home/candidate/.kube/config
+        sed -i 's|server: https://[^[:space:]]*|server: https://k8s-api-server:6445|g' /home/candidate/.kube/config
         sed -i '/certificate-authority-data:/d' /home/candidate/.kube/config
         if ! grep -q "insecure-skip-tls-verify" /home/candidate/.kube/config; then
-            sed -i '/server: https:\/\/k3d-cluster-serverlb:6443/a\    insecure-skip-tls-verify: true' /home/candidate/.kube/config
+            sed -i '/server: https:\/\/k8s-api-server:6445/a\    insecure-skip-tls-verify: true' /home/candidate/.kube/config
         fi
     fi
     cp /home/candidate/.kube/config /home/candidate/.kube/kubeconfig
-    sed -i 's|server: https://[^[:space:]]*|server: https://k3d-cluster-serverlb:6443|g' /home/candidate/.kube/kubeconfig
+    sed -i 's|server: https://[^[:space:]]*|server: https://k8s-api-server:6445|g' /home/candidate/.kube/kubeconfig
     sed -i '/certificate-authority-data:/d' /home/candidate/.kube/kubeconfig
     if ! grep -q "insecure-skip-tls-verify" /home/candidate/.kube/kubeconfig; then
-        sed -i '/server: https:\/\/k3d-cluster-serverlb:6443/a\    insecure-skip-tls-verify: true' /home/candidate/.kube/kubeconfig
+        sed -i '/server: https:\/\/k8s-api-server:6445/a\    insecure-skip-tls-verify: true' /home/candidate/.kube/kubeconfig
     fi
     echo "$(date '+%Y-%m-%d %H:%M:%S') | ✅ Kubeconfig updated for existing cluster"
     exit 0
@@ -141,32 +141,32 @@ echo "$(date '+%Y-%m-%d %H:%M:%S') | ✅ K3d cluster '$CLUSTER_NAME' is up and r
 echo "$(date '+%Y-%m-%d %H:%M:%S') | Docker and KIND environment is ready for use"
 
 # Save kubeconfig and set API server address
-# Use k3d loadbalancer container name (on ckx-network) so jumphost/remote-terminal can reach API server
-# Loadbalancer exposes 6443 internally; k3d names it k3d-<cluster>-serverlb
+# Use Docker Compose service name (k8s-api-server) which is on ckx-network and accessible from jumphost
+# The k3d loadbalancer port 6443 is mapped to host port 6445, accessible via service name
 k3d kubeconfig write $CLUSTER_NAME --kubeconfig-switch-context=false
 
-# Update kubeconfig to use loadbalancer container name
+# Update kubeconfig to use Docker Compose service name
 if [ -f /home/candidate/.kube/config ]; then
-    # Update the server address to use k3d loadbalancer container name
-    sed -i 's|server: https://[^[:space:]]*|server: https://k3d-cluster-serverlb:6443|g' /home/candidate/.kube/config
+    # Update the server address to use Docker Compose service name
+    sed -i 's|server: https://[^[:space:]]*|server: https://k8s-api-server:6445|g' /home/candidate/.kube/config
     # Remove certificate-authority-data if it exists (cannot use with insecure-skip-tls-verify)
     sed -i '/certificate-authority-data:/d' /home/candidate/.kube/config
     # Add insecure-skip-tls-verify if not present
     if ! grep -q "insecure-skip-tls-verify" /home/candidate/.kube/config; then
-        sed -i '/server: https:\/\/k3d-cluster-serverlb:6443/a\    insecure-skip-tls-verify: true' /home/candidate/.kube/config
+        sed -i '/server: https:\/\/k8s-api-server:6445/a\    insecure-skip-tls-verify: true' /home/candidate/.kube/config
     fi
 fi
 # Copy config to kubeconfig
 cp /home/candidate/.kube/config /home/candidate/.kube/kubeconfig
 # Ensure kubeconfig also has correct server address (double-check)
-sed -i 's|server: https://[^[:space:]]*|server: https://k3d-cluster-serverlb:6443|g' /home/candidate/.kube/kubeconfig
+sed -i 's|server: https://[^[:space:]]*|server: https://k8s-api-server:6445|g' /home/candidate/.kube/kubeconfig
 # Remove certificate-authority-data if it exists
 sed -i '/certificate-authority-data:/d' /home/candidate/.kube/kubeconfig
 # Add insecure-skip-tls-verify if not present
 if ! grep -q "insecure-skip-tls-verify" /home/candidate/.kube/kubeconfig; then
-    sed -i '/server: https:\/\/k3d-cluster-serverlb:6443/a\    insecure-skip-tls-verify: true' /home/candidate/.kube/kubeconfig
+    sed -i '/server: https:\/\/k8s-api-server:6445/a\    insecure-skip-tls-verify: true' /home/candidate/.kube/kubeconfig
 fi
-echo "$(date '+%Y-%m-%d %H:%M:%S') | ✅ Kubeconfig updated to use k3d-cluster-serverlb:6443 with insecure-skip-tls-verify"
+echo "$(date '+%Y-%m-%d %H:%M:%S') | ✅ Kubeconfig updated to use k8s-api-server:6445 with insecure-skip-tls-verify"
 
 export KUBECONFIG=/home/candidate/.kube/kubeconfig
 
