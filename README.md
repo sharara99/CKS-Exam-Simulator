@@ -46,21 +46,6 @@ To start the simulator:
    docker compose logs -f
    ```
 
-## Installation
-
-#### Linux & macOS
-```bash
-curl -fsSL https://raw.githubusercontent.com/nishanb/ck-x/master/scripts/install.sh | bash
-```
-
-#### Windows ( make sure WSL2 is enabled in the docker desktop )
-```powershell
-irm https://raw.githubusercontent.com/nishanb/ck-x/master/scripts/install.ps1 | iex
-```
-
-### Manual Installation
-For detailed installation instructions, please refer to our [Deployment Guide](scripts/COMPOSE-DEPLOY.md).
-
 ## Community & Support
 
 - Join our [Discord Community](https://discord.gg/6FPQMXNgG9) for discussions and support
