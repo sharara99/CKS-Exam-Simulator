@@ -1,12 +1,12 @@
 {
     "labs": [
       {
-        "id": "cka-2025-real",
-        "assetPath": "assets/exams/custom/cka-2025-real",
-        "name": "CKA 2025 Real Exam Questions",
-        "category": "CKA",
-        "description": "Real CKA 2025 exam questions covering kubeadm setup, CNI installation, Ingress, Gateway API, HPA, StorageClasses, PriorityClasses, and advanced Kubernetes administration tasks.",
-        "warmUpTimeInSeconds": 120,
+        "id": "cks-2026",
+        "assetPath": "assets/exams/custom/cks-2026",
+        "name": "CKS 2026 Expected Exam",
+        "category": "CKS",
+        "description": "CKS 2026 expected exam topics: CIS kubelet/etcd, API server security, ImagePolicyWebhook, NetworkPolicy, Istio, ServiceAccount tokens, TLS secrets, Docker/Falco security, Pod Security, Audit policy, and related tasks.",
+        "warmUpTimeInSeconds": 90,
         "difficulty": "Hard",
         "examDurationInMinutes": 120
       }

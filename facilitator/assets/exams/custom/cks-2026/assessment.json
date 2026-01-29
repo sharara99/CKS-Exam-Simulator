@@ -1,0 +1,260 @@
+{
+  "questions": [
+    {
+      "id": "1",
+      "namespace": "default",
+      "machineHostname": "cks-node01",
+      "question": "CIS Benchmark – Kubelet\n\nApply CIS benchmark settings for kubelet:\n- In kubelet config: set anonymous auth to false (in config file), use Webhook for authorization mode.\n- In etcd manifest (`/etc/kubernetes/manifests/etcd.yaml`): add `--client-cert-auth=true` and `--peer-client-cert-auth=true`; remove `--insecure-listen-address`.\n\nUse `kubectl -n kube-system edit cm kubelet-config`, then `kubeadm upgrade node phase kubelet-config`, then `service kubelet restart`.",
+      "concepts": ["CIS benchmark", "kubelet", "etcd", "security"],
+      "verification": [
+        {
+          "id": "1",
+          "description": "Kubelet and etcd configuration applied",
+          "verificationScriptFile": "q1_s1_validate.sh",
+          "expectedOutput": "0",
+          "weightage": 6
+        }
+      ]
+    },
+    {
+      "id": "2",
+      "namespace": "default",
+      "machineHostname": "cks-node01",
+      "question": "Remove Anonymous Access to API Server\n\nConfigure the API server to:\n- `--anonymous-auth=false`\n- `--authorization-mode=NODE,RBAC`\n- `--enable-admission-plugins=NodeRestriction`\n\nThen remove the ClusterRoleBinding named `anonymous-access` that grants anonymous access to the cluster.",
+      "concepts": ["apiserver", "RBAC", "anonymous-auth", "NodeRestriction"],
+      "verification": [
+        {
+          "id": "1",
+          "description": "API server and ClusterRoleBinding updated",
+          "verificationScriptFile": "q2_s1_validate.sh",
+          "expectedOutput": "0",
+          "weightage": 6
+        }
+      ]
+    },
+    {
+      "id": "3",
+      "namespace": "default",
+      "machineHostname": "cks-node01",
+      "question": "Image Policy Webhook\n\nEnable ImagePolicyWebhook in the API server using a config file:\n1. Update the config file (JSON) to implicit deny: set `defaultAllow` to `false` instead of `true`.\n2. Update the kubeconfig file to point to the webhook server URL given in the question.\n3. Update the kube-apiserver manifest to enable the image policy plugin:\n   `--enable-admission-plugins=ImagePolicyWebhook`\n   `--admission-control-config-file=<path of config file>`",
+      "concepts": ["ImagePolicyWebhook", "admission control", "apiserver"],
+      "verification": [
+        {
+          "id": "1",
+          "description": "ImagePolicyWebhook configured",
+          "verificationScriptFile": "q3_s1_validate.sh",
+          "expectedOutput": "0",
+          "weightage": 6
+        }
+      ]
+    },
+    {
+      "id": "4",
+      "namespace": "default",
+      "machineHostname": "cks-node01",
+      "question": "Deployment – readOnlyRootFilesystem\n\nUpdate the deployment `app-to-secure` in namespace `immutable-app` so that `readOnlyRootFilesystem` is set to `true` in the container securityContext to make the root filesystem immutable.",
+      "concepts": ["deployments", "securityContext", "readOnlyRootFilesystem"],
+      "verification": [
+        {
+          "id": "1",
+          "description": "Deployments have readOnlyRootFilesystem true",
+          "verificationScriptFile": "q4_s1_validate.sh",
+          "expectedOutput": "0",
+          "weightage": 6
+        }
+      ]
+    },
+    {
+      "id": "5",
+      "namespace": "default",
+      "machineHostname": "cks-node01",
+      "question": "Deployment – Security Context (2 containers)\n\nUpdate the deployment `dual-app` in namespace `dual-container` (it has 2 containers: nginx and sidecar) so that each container has the following security context:\n- `runAsUser: 30000`\n- `allowPrivilegeEscalation: false`\n- `readOnlyRootFilesystem: true`",
+      "concepts": ["deployments", "securityContext", "runAsUser", "allowPrivilegeEscalation"],
+      "verification": [
+        {
+          "id": "1",
+          "description": "Deployment has required security context",
+          "verificationScriptFile": "q5_s1_validate.sh",
+          "expectedOutput": "0",
+          "weightage": 6
+        }
+      ]
+    },
+    {
+      "id": "6",
+      "namespace": "team-sedum",
+      "machineHostname": "cks-node01",
+      "question": "Istio Security and mTLS – Sidecar Injection\n\nIstio is installed in the cluster. Enable Istio sidecar injection for the whole namespace and ensure all current and future Pods run with the Istio proxy sidecar.\n\nUse: `kubectl label ns <namespace> istio-injection=enabled`, then rollout restart the deployments in that namespace.",
+      "concepts": ["Istio", "sidecar injection", "mTLS"],
+      "verification": [
+        {
+          "id": "1",
+          "description": "Namespace has istio-injection and pods have sidecar",
+          "verificationScriptFile": "q6_s1_validate.sh",
+          "expectedOutput": "0",
+          "weightage": 6
+        }
+      ]
+    },
+    {
+      "id": "7",
+      "namespace": "development",
+      "machineHostname": "cks-node01",
+      "question": "NetworkPolicy – Deny All Traffic\n\nCreate a NetworkPolicy named `deny-all-traffic` in the `development` namespace that denies all ingress (and egress if required) traffic to pods in that namespace.\n\nUse `podSelector: {}` and `policyTypes: [Ingress]` or `[Ingress, Egress]`.",
+      "concepts": ["NetworkPolicy", "ingress", "egress", "deny-all"],
+      "verification": [
+        {
+          "id": "1",
+          "description": "NetworkPolicy deny-all exists in development",
+          "verificationScriptFile": "q7_s1_validate.sh",
+          "expectedOutput": "0",
+          "weightage": 6
+        }
+      ]
+    },
+    {
+      "id": "8",
+      "namespace": "naboo",
+      "machineHostname": "cks-node01",
+      "question": "NetworkPolicy – Allow from Stage and QA\n\nCreate a NetworkPolicy named `allow-from-stage-and-qa` in namespace `naboo` that allows ingress to all pods only from:\n- Pods with label `environmental: stage`\n- Pods in namespace `qa` (namespace selector `name: qa`).\n\nUse one policy with both rules in the `ingress` array.",
+      "concepts": ["NetworkPolicy", "podSelector", "namespaceSelector"],
+      "verification": [
+        {
+          "id": "1",
+          "description": "NetworkPolicy allow-from-stage-and-qa exists",
+          "verificationScriptFile": "q8_s1_validate.sh",
+          "expectedOutput": "0",
+          "weightage": 6
+        }
+      ]
+    },
+    {
+      "id": "9",
+      "namespace": "default",
+      "machineHostname": "cks-node01",
+      "question": "Upgrade Kubernetes (Node)\n\nUpgrade a worker/control-plane node: drain the node, SSH to it, update kubeadm, run `kubeadm upgrade node`, install new kubelet/kubectl versions, restart kubelet, uncordon the node. Use `apt-mark hold`/`unhold` as needed.",
+      "concepts": ["kubeadm", "upgrade", "kubelet", "drain", "uncordon"],
+      "verification": [
+        {
+          "id": "1",
+          "description": "Node upgraded successfully",
+          "verificationScriptFile": "q9_s1_validate.sh",
+          "expectedOutput": "0",
+          "weightage": 6
+        }
+      ]
+    },
+    {
+      "id": "10",
+      "namespace": "team-coral",
+      "machineHostname": "cks-node01",
+      "question": "ServiceAccount Token Expiration\n\nFor the deployment using ServiceAccount `stream-multiplex`:\n- Add pod annotation `token-lifetime: \"1200\"`.\n- Set `serviceAccountName: stream-multiplex`.\n- Set `automountServiceAccountToken: false`.\n- Mount the ServiceAccount token at `/var/run/secrets/custom/` with expiration 1200s using a projected volume with `serviceAccountToken.expirationSeconds: 1200`.",
+      "concepts": ["ServiceAccount", "projected volume", "token expiration"],
+      "verification": [
+        {
+          "id": "1",
+          "description": "Deployment has token config and mount",
+          "verificationScriptFile": "q10_s1_validate.sh",
+          "expectedOutput": "0",
+          "weightage": 6
+        }
+      ]
+    },
+    {
+      "id": "11",
+      "namespace": "code",
+      "machineHostname": "cks-node01",
+      "question": "TLS Secret – Create and Mount\n\nCreate a TLS secret from cert and key, then mount it in the deployment:\n1. `kubectl create secret tls code-secret --cert=/root/custom-cert.crt --key=/root/custom-key.key -n code`\n2. Edit the deployment to add a volume from the secret and a volumeMount (e.g. `mountPath: /etc/code/tls`, `readOnly: true`).",
+      "concepts": ["secrets", "TLS", "volume", "volumeMount"],
+      "verification": [
+        {
+          "id": "1",
+          "description": "TLS secret and volume mount configured",
+          "verificationScriptFile": "q11_s1_validate.sh",
+          "expectedOutput": "0",
+          "weightage": 6
+        }
+      ]
+    },
+    {
+      "id": "12",
+      "namespace": "default",
+      "machineHostname": "cks-node01",
+      "question": "Docker / Runtime Security\n\nSecure the Docker daemon: set ownership of the socket (e.g. `chown root:root /var/run/docker.sock`), use `--group=root` in the Docker service, and ensure `daemon.json` only has `unix:///var/run/docker.sock` (no TCP). Remove users from the docker group if required.",
+      "concepts": ["Docker", "daemon.json", "socket", "security"],
+      "verification": [
+        {
+          "id": "1",
+          "description": "Docker secured as required",
+          "verificationScriptFile": "q12_s1_validate.sh",
+          "expectedOutput": "0",
+          "weightage": 6
+        }
+      ]
+    },
+    {
+      "id": "13",
+      "namespace": "default",
+      "machineHostname": "cks-node01",
+      "question": "Falco – Custom Rule and Scale to Zero\n\nFind the pod that uses a path under `/dev/x` (or as specified). Add a Falco rule that matches that path and has a given description/output. Then scale the deployment that uses that path to zero.",
+      "concepts": ["Falco", "rules", "runtime security"],
+      "verification": [
+        {
+          "id": "1",
+          "description": "Falco rule and scaling applied",
+          "verificationScriptFile": "q13_s1_validate.sh",
+          "expectedOutput": "0",
+          "weightage": 6
+        }
+      ]
+    },
+    {
+      "id": "14",
+      "namespace": "default",
+      "machineHostname": "cks-node01",
+      "question": "ImagePolicyWebhook – AdmissionConfiguration\n\nCreate an AdmissionConfiguration with ImagePolicyWebhook (kubeConfigFile, allowTTL, denyTTL, retryBackoff, defaultAllow). Mount the config directory in the API server, set `--admission-control-config-file` and `--enable-admission-plugins=ImagePolicyWebhook`. Fix the admission config and kubeconfig YAML files as described in the question.",
+      "concepts": ["ImagePolicyWebhook", "AdmissionConfiguration", "apiserver"],
+      "verification": [
+        {
+          "id": "1",
+          "description": "AdmissionConfiguration and apiserver configured",
+          "verificationScriptFile": "q14_s1_validate.sh",
+          "expectedOutput": "0",
+          "weightage": 6
+        }
+      ]
+    },
+    {
+      "id": "15",
+      "namespace": "restricted",
+      "machineHostname": "cks-node01",
+      "question": "Pod Security Standard (Restricted)\n\nIn namespace `restricted` (enforcing restricted Pod Security), fix the deployment `web-server` so its pods can run: set `allowPrivilegeEscalation: false`, `capabilities.drop: [\"ALL\"]`, `runAsNonRoot: true`, `seccompProfile.type: RuntimeDefault`, and remove `runAsUser: 0`.",
+      "concepts": ["Pod Security Admission", "restricted", "securityContext"],
+      "verification": [
+        {
+          "id": "1",
+          "description": "Deployment complies with restricted PSS",
+          "verificationScriptFile": "q15_s1_validate.sh",
+          "expectedOutput": "0",
+          "weightage": 6
+        }
+      ]
+    },
+    {
+      "id": "16",
+      "namespace": "default",
+      "machineHostname": "cks-node01",
+      "question": "Audit Log Policy\n\nAdjust the audit policy (e.g. on the node at `/etc/kubernetes/audit/policy.yaml`): store only one backup of logs; from Secret resources use level Metadata; from `system:nodes` userGroups use level RequestResponse; catch all other as Metadata. Empty the audit log file after changes so it only contains entries per the new policy.",
+      "concepts": ["audit", "audit policy", "apiserver"],
+      "verification": [
+        {
+          "id": "1",
+          "description": "Audit policy and log configured",
+          "verificationScriptFile": "q16_s1_validate.sh",
+          "expectedOutput": "0",
+          "weightage": 6
+        }
+      ]
+    }
+  ]
+}
