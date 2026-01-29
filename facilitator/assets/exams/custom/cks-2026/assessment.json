@@ -4,7 +4,7 @@
       "id": "1",
       "namespace": "default",
       "machineHostname": "ckad9999",
-      "question": "CIS Benchmark – Kubelet\n\nApply CIS benchmark settings for kubelet:\n\n- In kubelet config: set anonymous auth to false (in config file), use Webhook for authorization mode.\n- In etcd manifest (`/etc/kubernetes/manifests/etcd.yaml`):\n  - Add: `--client-cert-auth=true` and `--peer-client-cert-auth=true`\n  - Remove: `--insecure-listen-address`\n\n`kubectl -n kube-system edit cm kubelet-config`\n`kubeadm upgrade node phase kubelet-config`\n`service kubelet restart`",
+      "question": "CIS Benchmark – Kubelet\n\nApply CIS benchmark settings for kubelet:\n\n- In kubelet config: set anonymous auth to false (in config file), use Webhook for authorization mode.\n- In etcd manifest (`/etc/kubernetes/manifests/etcd.yaml`):\n  - Add client certificate authentication flags\n  - Remove insecure listen address flag",
       "concepts": ["CIS benchmark", "kubelet", "etcd", "security"],
       "verification": [
         {
@@ -20,7 +20,7 @@
       "id": "2",
       "namespace": "default",
       "machineHostname": "ckad9999",
-      "question": "Remove Anonymous Access to API Server\n\nConfigure the API server:\n- `--anonymous-auth=false`\n- `--authorization-mode=NODE,RBAC`\n- `--enable-admission-plugins=NodeRestriction`\n\nThen remove the ClusterRoleBinding named `anonymous-access` that grants anonymous access to the cluster.",
+      "question": "Remove Anonymous Access to API Server\n\nConfigure the API server to disable anonymous authentication and enable NodeRestriction admission plugin.\n\nThen remove the ClusterRoleBinding named `anonymous-access` that grants anonymous access to the cluster.",
       "concepts": ["apiserver", "RBAC", "anonymous-auth", "NodeRestriction"],
       "verification": [
         {
@@ -34,9 +34,9 @@
     },
     {
       "id": "3",
-      "namespace": "default",
+      "namespace": "team-white",
       "machineHostname": "ckad9999",
-      "question": "Image Policy Webhook\n\nEnable ImagePolicyWebhook in the API server and use config file:\n\n1. Update config file (it's in JSON format) to implicit deny by setting parameter `defaultAllow` to `false` instead of `true`\n2. Update kubeconfig file to point to webhook server URL shared in the question\n3. Update kube-apiserver manifest to enable image policy plugin:\n   `--enable-admission-plugins=ImagePolicyWebhook`\n   `--admission-control-config-file=<path of config file>`",
+      "question": "Image Policy Webhook\n\nEnable ImagePolicyWebhook in apiserver and use config file:\n\n1. Update config file (it's in JSON format) to implicit deny by setting parameter `defaultAllow` to `false` instead of `true`\n2. Update kubeconfig file to point to webhook server URL shared in the question\n3. Update kube-apiserver manifest to enable image policy plugin and specify the admission control config file path",
       "concepts": ["ImagePolicyWebhook", "admission control", "apiserver"],
       "verification": [
         {
@@ -68,7 +68,7 @@
       "id": "5",
       "namespace": "default",
       "machineHostname": "ckad9999",
-      "question": "Deployment – Security Context (2 containers)\n\nUpdate deployment that has 2 containers with security context in each pod:\n- `runAsUser: 30000`\n- `allowPrivilegeEscalation: false`\n- `readOnlyRootFilesystem: true`",
+      "question": "Deployment – Security Context\n\nUpdate deployment that has 2 containers with security context in each pod:\n- `runAsUser: 30000`\n- `allowPrivilegeEscalation: false`\n- `readOnlyRootFilesystem: true`",
       "concepts": ["deployments", "securityContext", "runAsUser", "allowPrivilegeEscalation"],
       "verification": [
         {
@@ -84,7 +84,7 @@
       "id": "6",
       "namespace": "team-sedum",
       "machineHostname": "ckad9999",
-      "question": "Istio Security and mTLS\n\nIstio has been installed in the cluster. Enable Istio sidecar injection for the whole Namespace and ensure all current and future Pods are running with the Istio proxy sidecar.\n\n`kubectl get ns --show-labels`\n`kubectl label ns team-sedum istio-injection=enabled`\n`kubectl -n team-sedum rollout restart deploy one`\n`kubectl -n team-sedum rollout restart deploy two`",
+      "question": "Istio Security and mTLS\n\nIstio has been installed in the cluster. Enable Istio sidecar injection for the whole Namespace `team-sedum` and ensure all current and future Pods are running with the Istio proxy sidecar.",
       "concepts": ["Istio", "sidecar injection", "mTLS"],
       "verification": [
         {
@@ -132,7 +132,7 @@
       "id": "9",
       "namespace": "default",
       "machineHostname": "ckad9999",
-      "question": "Upgrade Kubernetes\n\nUpgrade a Kubernetes node:\n\n`kubectl drain <node-name> --ignore-daemonsets`\nSSH to the node\n`apt update`\n`apt-mark hold kubeadm`\n`kubeadm upgrade node`\n`apt-mark unhold kubectl kubelet`\n`apt install kubelet=<version> kubectl=<version>`\n`service kubelet restart`\n`apt-mark hold kubelet kubectl`\n`kubectl uncordon <node-name>`",
+      "question": "Upgrade Kubernetes\n\nUpgrade a Kubernetes node. Drain the node, upgrade kubeadm and kubelet components, then uncordon the node.",
       "concepts": ["kubeadm", "upgrade", "kubelet", "drain", "uncordon"],
       "verification": [
         {
@@ -148,7 +148,7 @@
       "id": "10",
       "namespace": "team-coral",
       "machineHostname": "ckad9999",
-      "question": "ServiceAccount Token Expiration\n\nPods should have annotation `token-lifetime` with value `1200`.\nServiceAccount `stream-multiplex` should be used.\nDisable automounting of ServiceAccount tokens.\nThe ServiceAccount token should be mounted at `/var/run/secrets/custom/` with an expiration of 1200s.\n\nUse a projected volume with `serviceAccountToken.expirationSeconds: 1200`.",
+      "question": "ServiceAccount Token Expiration\n\nPods should have annotation `token-lifetime` with value `1200`.\nServiceAccount `stream-multiplex` should be used.\nDisable automounting of ServiceAccount tokens.\nThe ServiceAccount token should be mounted at `/var/run/secrets/custom/` with an expiration of 1200s.\n\n```\napiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: stream-multiplex\n  namespace: team-coral\nspec:\n  replicas: 2\n  selector:\n    matchLabels:\n      id: stream-multiplex\n  template:\n    metadata:\n      labels:\n        id: stream-multiplex\n      annotations:\n        token-lifetime: \"1200\"\n    spec:\n      serviceAccountName: stream-multiplex\n      automountServiceAccountToken: false\n      containers:\n        - image: httpd:2-alpine\n          name: httpd\n          resources:\n            requests:\n              cpu: 20m\n              memory: 20Mi\n          volumeMounts:\n            - name: token-volume\n              mountPath: /var/run/secrets/custom\n              readOnly: true\n      volumes:\n        - name: token-volume\n          projected:\n            sources:\n              - serviceAccountToken:\n                  path: token\n                  expirationSeconds: 1200\n```",
       "concepts": ["ServiceAccount", "projected volume", "token expiration"],
       "verification": [
         {
@@ -164,7 +164,7 @@
       "id": "11",
       "namespace": "code",
       "machineHostname": "ckad9999",
-      "question": "TLS Secret – Create and Mount\n\nFirst create the TLS secret:\n\n`kubectl create secret tls code-secret --cert=/root/custom-cert.crt --key=/root/custom-key.key -n code`\n\nThen edit the deployment to mount the secret:\n\n`kubectl edit deployment code-server -n code`\n\nUnder the `spec.template.spec` section, add:\n```\nvolumes:\n  - name: secret-volume\n    secret:\n      secretName: code-secret\n```\n\nUnder the `spec.template.spec.containers` section, add the volume mount:\n```\nvolumeMounts:\n  - name: secret-volume\n    mountPath: /etc/code/tls\n    readOnly: true\n```",
+      "question": "TLS Secret – Create and Mount\n\nCreate a TLS secret named `code-secret` in namespace `code` using the certificate files located at `/root/custom-cert.crt` and `/root/custom-key.key`.\n\nThen edit the deployment `code-server` in namespace `code` to mount this secret as a volume at `/etc/code/tls` with read-only access.",
       "concepts": ["secrets", "TLS", "volume", "volumeMount"],
       "verification": [
         {
@@ -180,7 +180,7 @@
       "id": "12",
       "namespace": "default",
       "machineHostname": "ckad9999",
-      "question": "Docker Security\n\nRemove user from docker group:\n\n`gpasswd -d <username> docker`\n`newgrp $(id -gn)`\n\nSecure docker:\n\n- Change the ownership of the docker file: `chown root:root /var/run/docker.sock`\n- Add `--group=root` to the ExecStart of docker systemd file:\n  `systemctl edit docker`\n  Add:\n  ```\n  [Service]\n  ExecStart=\n  ExecStart=/usr/bin/dockerd --group=root\n  ```\n- Reload docker daemon:\n  `systemctl daemon-reload`\n  `systemctl restart docker`\n- Modify `/etc/docker/daemon.json` to remove TCP section, keep only:\n  ```\n  {\n    \"hosts\": [\"unix:///var/run/docker.sock\"]\n  }\n  ```\n- Restart docker again.",
+      "question": "Docker Security\n\nRemove user from docker group and secure docker:\n\n- Change the ownership of `/var/run/docker.sock` to root:root\n- Add `--group=root` to the ExecStart of docker systemd file\n- Modify `/etc/docker/daemon.json` to remove TCP section, keep only unix socket\n- Restart docker service",
       "concepts": ["Docker", "daemon.json", "socket", "security"],
       "verification": [
         {
@@ -196,7 +196,7 @@
       "id": "13",
       "namespace": "default",
       "machineHostname": "ckad9999",
-      "question": "Falco\n\nGet the pod that uses this folder `/dev/x`.\n\nAdd a Falco rule:\n```\n- rule: Custom Rule 1\n  desc: Custom Rule 1\n  condition: container and fd.name startswith /dev/x\n  output: custom_rule_1 file=%fd.name container=%container.id\n  priority: WARNING\n```\n\nAnd scale this deployment to zero.",
+      "question": "Falco\n\nGet the pod that uses this folder `/dev/x`.\n\nAdd a Falco rule to detect access to files starting with `/dev/x` and scale the deployment that uses this folder to zero.",
       "concepts": ["Falco", "rules", "runtime security"],
       "verification": [
         {
@@ -210,9 +210,9 @@
     },
     {
       "id": "14",
-      "namespace": "default",
+      "namespace": "team-white",
       "machineHostname": "ckad9999",
-      "question": "ImagePolicyWebhook – AdmissionConfiguration\n\nCreate an AdmissionConfiguration at `/opt/course/12/webhook/admission-config.yaml` which contains the following ImagePolicyWebhook configuration:\n\n```\nimagePolicy:\n  kubeConfigFile: /etc/kubernetes/webhook/webhook.yaml\n  allowTTL: 10\n  denyTTL: 10\n  retryBackoff: 20\n  defaultAllow: true\n```\n\nConfigure the apiserver to:\n- Mount `/opt/course/12/webhook` at `/etc/kubernetes/webhook`\n- Use the AdmissionConfiguration at path `/etc/kubernetes/webhook/admission-config.yaml`\n- Enable the ImagePolicyWebhook admission plugin:\n  `--enable-admission-plugins=ImagePolicyWebhook`\n  `--admission-control-config-file=/etc/kubernetes/webhook/admission-config.yaml`\n\nFix the admission config and kubeconfig YAML files as needed.",
+      "question": "ImagePolicyWebhook – AdmissionConfiguration\n\nCreate an AdmissionConfiguration at `/opt/course/12/webhook/admission-config.yaml` with ImagePolicyWebhook configuration.\n\nConfigure the apiserver to:\n- Mount `/opt/course/12/webhook` at `/etc/kubernetes/webhook`\n- Use the AdmissionConfiguration at the mounted path\n- Enable the ImagePolicyWebhook admission plugin\n\nFix the admission config and kubeconfig YAML files as needed.",
       "concepts": ["ImagePolicyWebhook", "AdmissionConfiguration", "apiserver"],
       "verification": [
         {
@@ -228,7 +228,7 @@
       "id": "15",
       "namespace": "restricted",
       "machineHostname": "ckad9999",
-      "question": "Pod Security Standard\n\nIn namespace `restricted` (enforcing restricted Pod Security), fix the deployment `web-server` so its pods can run.\n\nSet the securityContext:\n```\nsecurityContext:\n  allowPrivilegeEscalation: false\n  capabilities:\n    drop:\n    - ALL\n  runAsNonRoot: true\n  seccompProfile:\n    type: RuntimeDefault\n```\n\nAlso, remove `runAsUser: 0`.\n\n`kubectl edit deployment web-server -n restricted`",
+      "question": "Pod Security Standard\n\nIn namespace `restricted` (enforcing restricted Pod Security), fix the deployment `web-server` so its pods can run.\n\nSet the securityContext to comply with restricted policy and remove `runAsUser: 0`.",
       "concepts": ["Pod Security Admission", "restricted", "securityContext"],
       "verification": [
         {
@@ -244,7 +244,7 @@
       "id": "16",
       "namespace": "default",
       "machineHostname": "ckad9999",
-      "question": "Audit Log Policy\n\nAudit Logging has been enabled in the cluster with an Audit Policy located at `/etc/kubernetes/audit/policy.yaml`.\n\nChange the configuration so that only one backup of the logs is stored.\n\nAlter the Policy in a way that it only stores logs:\n- From Secret resources, level Metadata\n- From `system:nodes` userGroups, level RequestResponse\n- Catch all other metadata logs\n\nAfter you update the Policy make sure to empty the log file so it only contains entries according to your changes:\n\n`echo > /etc/kubernetes/audit/logs/audit.log`",
+      "question": "Audit Log Policy\n\nAudit Logging has been enabled in the cluster with an Audit Policy located at `/etc/kubernetes/audit/policy.yaml`.\n\nChange the configuration so that only one backup of the logs is stored.\n\nAlter the Policy in a way that it only stores logs:\n- From Secret resources, level Metadata\n- From `system:nodes` userGroups, level RequestResponse\n- Catch all other metadata logs\n\nAfter you update the Policy make sure to empty the log file at `/etc/kubernetes/audit/logs/audit.log`.",
       "concepts": ["audit", "audit policy", "apiserver"],
       "verification": [
         {

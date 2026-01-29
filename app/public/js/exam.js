@@ -261,16 +261,24 @@ document.addEventListener('DOMContentLoaded', function() {
             })
             .catch(error => {
                         console.error('Error loading exam:', error);
-                // Show an error message to the user
-                        alert('Failed to load exam data. Please refresh the page or contact support.');
                 pageLoader.style.display = 'none';
+                if (error.message && error.message.includes('404')) {
+                    alert('Exam session not found or expired. Redirecting to home.');
+                    window.location.href = '/';
+                } else {
+                    alert('Failed to load exam data. Please refresh the page or contact support.');
+                }
                     });
             })
             .catch(error => {
                 console.error('Error loading exam:', error);
-                // Show an error message to the user
-                alert('Failed to load exam data. Please refresh the page or contact support.');
                 pageLoader.style.display = 'none';
+                if (error.message && error.message.includes('404')) {
+                    alert('Exam session not found or expired. Redirecting to home.');
+                    window.location.href = '/';
+                } else {
+                    alert('Failed to load exam data. Please refresh the page or contact support.');
+                }
             });
     }
     
@@ -644,6 +652,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // Setup clipboard copy for inline code elements
         ClipboardService.setupClickToCopy();
         ClipboardService.setupInlineCodeCopy();
+        ClipboardService.setupCopyInterception();
         
         // If in completed exam mode, ensure the question pane is visible
         if (isCompletedExamMode) {
