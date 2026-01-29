@@ -36,7 +36,7 @@
       "id": "3",
       "namespace": "default",
       "machineHostname": "ckad9999",
-      "question": "Image Policy Webhook\n\nEnable ImagePolicyWebhook in the API server using a config file:\n1. Update the config file (JSON) to implicit deny: set `defaultAllow` to `false` instead of `true`.\n2. Update the kubeconfig file to point to the webhook server URL given in the question.\n3. Update the kube-apiserver manifest to enable the image policy plugin:\n   `--enable-admission-plugins=ImagePolicyWebhook`\n   `--admission-control-config-file=<path of config file>`",
+      "question": "Image Policy Webhook\n\nEnable ImagePolicyWebhook in the API server using a config file:\n1. Update the config file (it's in JSON format) to implicit deny by setting parameter `defaultAllow` to `false` instead of `true`.\n2. Update kubeconfig file to point to webhook server URL shared in the question.\n3. Update kube-apiserver manifest to enable image policy plugin:\n   `--enable-admission-plugins=ImagePolicyWebhook`\n   `--admission-control-config-file=<path of config file>`",
       "concepts": ["ImagePolicyWebhook", "admission control", "apiserver"],
       "verification": [
         {
@@ -52,7 +52,7 @@
       "id": "4",
       "namespace": "default",
       "machineHostname": "ckad9999",
-      "question": "Deployment – readOnlyRootFilesystem\n\nUpdate the deployment `app-to-secure` in namespace `immutable-app` so that `readOnlyRootFilesystem` is set to `true` in the container securityContext to make the root filesystem immutable.",
+      "question": "Deployment – readOnlyRootFilesystem\n\nUpdate deployments to be `readOnlyRootFilesystem` to `true` to be immutable.",
       "concepts": ["deployments", "securityContext", "readOnlyRootFilesystem"],
       "verification": [
         {
@@ -68,7 +68,7 @@
       "id": "5",
       "namespace": "default",
       "machineHostname": "ckad9999",
-      "question": "Deployment – Security Context (2 containers)\n\nUpdate the deployment `dual-app` in namespace `dual-container` (it has 2 containers: nginx and sidecar) so that each container has the following security context:\n- `runAsUser: 30000`\n- `allowPrivilegeEscalation: false`\n- `readOnlyRootFilesystem: true`",
+      "question": "Deployment – Security Context (2 containers)\n\nUpdate deployment that has 2 containers with security context in each pod with the below:\n- `runAsUser: 30000`\n- `allowPrivilegeEscalation: false`\n- `readOnlyRootFilesystem: true`",
       "concepts": ["deployments", "securityContext", "runAsUser", "allowPrivilegeEscalation"],
       "verification": [
         {
@@ -84,7 +84,7 @@
       "id": "6",
       "namespace": "team-sedum",
       "machineHostname": "ckad9999",
-      "question": "Istio Security and mTLS – Sidecar Injection\n\nIstio is installed in the cluster. Enable Istio sidecar injection for the whole namespace and ensure all current and future Pods run with the Istio proxy sidecar.\n\nUse: `kubectl label ns <namespace> istio-injection=enabled`, then rollout restart the deployments in that namespace.",
+      "question": "Istio Security and mTLS\n\nIstio has been installed in the cluster. Enable Istio sidecar injection for the whole Namespace and ensure all current and future Pods are running with the Istio proxy sidecar.\n\nUse: `kubectl get ns --show-labels`, `kubectl label ns team-sedum istio-injection=enabled`, then `kubectl -n team-sedum rollout restart deploy` for all deployments.",
       "concepts": ["Istio", "sidecar injection", "mTLS"],
       "verification": [
         {
@@ -100,7 +100,7 @@
       "id": "7",
       "namespace": "development",
       "machineHostname": "ckad9999",
-      "question": "NetworkPolicy – Deny All Traffic\n\nCreate a NetworkPolicy named `deny-all-traffic` in the `development` namespace that denies all ingress (and egress if required) traffic to pods in that namespace.\n\nUse `podSelector: {}` and `policyTypes: [Ingress]` or `[Ingress, Egress]`.",
+      "question": "NetworkPolicy – Deny All Traffic\n\nCreate network policy that denies all egress and ingress traffic to pods in `development` namespace.\n\nUse:\n```\napiVersion: networking.k8s.io/v1\nkind: NetworkPolicy\nmetadata:\n  name: deny-all-traffic\n  namespace: development\nspec:\n  podSelector: {}\n  policyTypes:\n  - Ingress\n```",
       "concepts": ["NetworkPolicy", "ingress", "egress", "deny-all"],
       "verification": [
         {
@@ -116,7 +116,7 @@
       "id": "8",
       "namespace": "naboo",
       "machineHostname": "ckad9999",
-      "question": "NetworkPolicy – Allow from Stage and QA\n\nCreate a NetworkPolicy named `allow-from-stage-and-qa` in namespace `naboo` that allows ingress to all pods only from:\n- Pods with label `environmental: stage`\n- Pods in namespace `qa` (namespace selector `name: qa`).\n\nUse one policy with both rules in the `ingress` array.",
+      "question": "NetworkPolicy – Allow from Stage and QA\n\nCreate network policy that allow only traffic to all pods in namespace `naboo` from pods with label `environmental: stage` and from pods in namespace `qa`.\n\nUse:\n```\napiVersion: networking.k8s.io/v1\nkind: NetworkPolicy\nmetadata:\n  name: allow-from-stage-and-qa\n  namespace: naboo\nspec:\n  podSelector: {}\n  policyTypes:\n  - Ingress\n  ingress:\n  - from:\n    - namespaceSelector:\n        matchLabels:\n          name: qa\n    - podSelector:\n        matchLabels:\n          environmental: stage\n```",
       "concepts": ["NetworkPolicy", "podSelector", "namespaceSelector"],
       "verification": [
         {
@@ -132,7 +132,7 @@
       "id": "9",
       "namespace": "default",
       "machineHostname": "ckad9999",
-      "question": "Upgrade Kubernetes (Node)\n\nUpgrade a worker/control-plane node: drain the node, SSH to it, update kubeadm, run `kubeadm upgrade node`, install new kubelet/kubectl versions, restart kubelet, uncordon the node. Use `apt-mark hold`/`unhold` as needed.",
+      "question": "Upgrade Kubernetes\n\nUpgrade a Kubernetes node:\n- `kubectl drain <node-name> --ignore-daemonsets`\n- SSH to the node\n- `apt update`\n- `apt-mark hold kubeadm`\n- `kubeadm upgrade node`\n- `apt-mark unhold kubectl kubelet`\n- `apt install kubelet=<version> kubectl=<version>`\n- `service kubelet restart`\n- `apt-mark hold kubelet kubectl`\n- `kubectl uncordon <node-name>`",
       "concepts": ["kubeadm", "upgrade", "kubelet", "drain", "uncordon"],
       "verification": [
         {
@@ -148,7 +148,7 @@
       "id": "10",
       "namespace": "team-coral",
       "machineHostname": "ckad9999",
-      "question": "ServiceAccount Token Expiration\n\nFor the deployment using ServiceAccount `stream-multiplex`:\n- Add pod annotation `token-lifetime: \"1200\"`.\n- Set `serviceAccountName: stream-multiplex`.\n- Set `automountServiceAccountToken: false`.\n- Mount the ServiceAccount token at `/var/run/secrets/custom/` with expiration 1200s using a projected volume with `serviceAccountToken.expirationSeconds: 1200`.",
+      "question": "ServiceAccount Token Expiration\n\nPods should have annotation `token-lifetime` with value `1200`.\nServiceAccount `stream-multiplex` should be used.\nDisable automounting of ServiceAccount tokens.\nThe ServiceAccount token should be mounted at `/var/run/secrets/custom/` with an expiration of 1200s.\n\nUse a projected volume with `serviceAccountToken.expirationSeconds: 1200`.",
       "concepts": ["ServiceAccount", "projected volume", "token expiration"],
       "verification": [
         {
@@ -164,7 +164,7 @@
       "id": "11",
       "namespace": "code",
       "machineHostname": "ckad9999",
-      "question": "TLS Secret – Create and Mount\n\nCreate a TLS secret from cert and key, then mount it in the deployment:\n1. `kubectl create secret tls code-secret --cert=/root/custom-cert.crt --key=/root/custom-key.key -n code`\n2. Edit the deployment to add a volume from the secret and a volumeMount (e.g. `mountPath: /etc/code/tls`, `readOnly: true`).",
+      "question": "TLS Secret – Create and Mount\n\nFirst create the TLS secret:\n`kubectl create secret tls code-secret --cert=/root/custom-cert.crt --key=/root/custom-key.key -n code`\n\nThen edit the deployment to mount the secret:\n`kubectl edit deployment code-server -n code`\n\nUnder the `spec.template.spec` section, add:\n```\nvolumes:\n  - name: secret-volume\n    secret:\n      secretName: code-secret\n```\n\nUnder the `spec.template.spec.containers` section, add the volume mount:\n```\nvolumeMounts:\n  - name: secret-volume\n    mountPath: /etc/code/tls\n    readOnly: true\n```",
       "concepts": ["secrets", "TLS", "volume", "volumeMount"],
       "verification": [
         {
@@ -180,7 +180,7 @@
       "id": "12",
       "namespace": "default",
       "machineHostname": "ckad9999",
-      "question": "Docker / Runtime Security\n\nSecure the Docker daemon: set ownership of the socket (e.g. `chown root:root /var/run/docker.sock`), use `--group=root` in the Docker service, and ensure `daemon.json` only has `unix:///var/run/docker.sock` (no TCP). Remove users from the docker group if required.",
+      "question": "Docker Security\n\nRemove user from docker group:\n`gpasswd -d <username> docker`\n`newgrp $(id -gn)`\n\nSecure docker:\n- Change the ownership of the docker file: `chown root:root /var/run/docker.sock`\n- Add `--group=root` to the ExecStart of docker systemd file:\n  `systemctl edit docker`\n  Add:\n  ```\n  [Service]\n  ExecStart=\n  ExecStart=/usr/bin/dockerd --group=root\n  ```\n- Reload docker daemon: `systemctl daemon-reload` and `systemctl restart docker`\n- Modify `/etc/docker/daemon.json` to remove TCP section, keep only:\n  ```\n  {\n    \"hosts\": [\"unix:///var/run/docker.sock\"]\n  }\n  ```\n- Restart docker again.",
       "concepts": ["Docker", "daemon.json", "socket", "security"],
       "verification": [
         {
@@ -196,7 +196,7 @@
       "id": "13",
       "namespace": "default",
       "machineHostname": "ckad9999",
-      "question": "Falco – Custom Rule and Scale to Zero\n\nFind the pod that uses a path under `/dev/x` (or as specified). Add a Falco rule that matches that path and has a given description/output. Then scale the deployment that uses that path to zero.",
+      "question": "Falco\n\nGet the pod that uses this folder `/dev/x`.\n\nAdd a Falco rule:\n```\n- rule: Custom Rule 1\n  desc: Custom Rule 1\n  condition: container and fd.name startswith /dev/x\n  output: custom_rule_1 file=%fd.name container=%container.id\n  priority: WARNING\n```\n\nAnd scale this deployment to zero.",
       "concepts": ["Falco", "rules", "runtime security"],
       "verification": [
         {
@@ -212,7 +212,7 @@
       "id": "14",
       "namespace": "default",
       "machineHostname": "ckad9999",
-      "question": "ImagePolicyWebhook – AdmissionConfiguration\n\nCreate an AdmissionConfiguration with ImagePolicyWebhook (kubeConfigFile, allowTTL, denyTTL, retryBackoff, defaultAllow). Mount the config directory in the API server, set `--admission-control-config-file` and `--enable-admission-plugins=ImagePolicyWebhook`. Fix the admission config and kubeconfig YAML files as described in the question.",
+      "question": "ImagePolicyWebhook – AdmissionConfiguration\n\nCreate an AdmissionConfiguration at `/opt/course/12/webhook/admission-config.yaml` which contains the following ImagePolicyWebhook configuration:\n```\nimagePolicy:\n  kubeConfigFile: /etc/kubernetes/webhook/webhook.yaml\n  allowTTL: 10\n  denyTTL: 10\n  retryBackoff: 20\n  defaultAllow: true\n```\n\nConfigure the apiserver to:\n- Mount `/opt/course/12/webhook` at `/etc/kubernetes/webhook`\n- Use the AdmissionConfiguration at path `/etc/kubernetes/webhook/admission-config.yaml`\n- Enable the ImagePolicyWebhook admission plugin:\n  `--enable-admission-plugins=ImagePolicyWebhook`\n  `--admission-control-config-file=/etc/kubernetes/webhook/admission-config.yaml`\n\nFix the admission config and kubeconfig YAML files as needed.",
       "concepts": ["ImagePolicyWebhook", "AdmissionConfiguration", "apiserver"],
       "verification": [
         {
@@ -228,7 +228,7 @@
       "id": "15",
       "namespace": "restricted",
       "machineHostname": "ckad9999",
-      "question": "Pod Security Standard (Restricted)\n\nIn namespace `restricted` (enforcing restricted Pod Security), fix the deployment `web-server` so its pods can run: set `allowPrivilegeEscalation: false`, `capabilities.drop: [\"ALL\"]`, `runAsNonRoot: true`, `seccompProfile.type: RuntimeDefault`, and remove `runAsUser: 0`.",
+      "question": "Pod Security Standard\n\nIn namespace `restricted` (enforcing restricted Pod Security), fix the deployment `web-server` so its pods can run.\n\nSet the securityContext:\n```\nsecurityContext:\n  allowPrivilegeEscalation: false\n  capabilities:\n    drop:\n    - ALL\n  runAsNonRoot: true\n  seccompProfile:\n    type: RuntimeDefault\n```\n\nAlso, remove `runAsUser: 0`.\n\nUse: `kubectl edit deployment web-server -n restricted`",
       "concepts": ["Pod Security Admission", "restricted", "securityContext"],
       "verification": [
         {
@@ -244,7 +244,7 @@
       "id": "16",
       "namespace": "default",
       "machineHostname": "ckad9999",
-      "question": "Audit Log Policy\n\nAdjust the audit policy (e.g. on the node at `/etc/kubernetes/audit/policy.yaml`): store only one backup of logs; from Secret resources use level Metadata; from `system:nodes` userGroups use level RequestResponse; catch all other as Metadata. Empty the audit log file after changes so it only contains entries per the new policy.",
+      "question": "Audit Log Policy\n\nAudit Logging has been enabled in the cluster with an Audit Policy located at `/etc/kubernetes/audit/policy.yaml`.\n\nChange the configuration so that only one backup of the logs is stored.\n\nAlter the Policy in a way that it only stores logs:\n- From Secret resources, level Metadata\n- From `system:nodes` userGroups, level RequestResponse\n- Catch all other metadata logs\n\nAfter you update the Policy make sure to empty the log file so it only contains entries according to your changes, like using `echo > /etc/kubernetes/audit/logs/audit.log`.",
       "concepts": ["audit", "audit policy", "apiserver"],
       "verification": [
         {
