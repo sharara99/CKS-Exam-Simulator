@@ -18,7 +18,8 @@ RUN apt-get update && apt-get install -y \
     bash-completion\
     nano \
     docker.io\
-    jq
+    jq \
+    openssl
 
 # Accept build-time architecture argument
 ARG TARGETARCH
@@ -81,10 +82,21 @@ RUN chmod 755 /home/candidate/downloads
 # Copy exam environment scripts
 COPY scripts/prepare-exam-env.sh /usr/local/bin/prepare-exam-env
 COPY scripts/cleanup-exam-env.sh /usr/local/bin/cleanup-exam-env
+COPY scripts/create-exam-files.sh /usr/local/bin/create-exam-files
+COPY scripts/create-exam-files-local.sh /usr/local/bin/create-exam-files-local
 
 # Make scripts executable
 RUN chmod +x /usr/local/bin/prepare-exam-env
 RUN chmod +x /usr/local/bin/cleanup-exam-env
+RUN chmod +x /usr/local/bin/create-exam-files
+RUN chmod +x /usr/local/bin/create-exam-files-local
+
+# Create all exam files during Docker build
+RUN /usr/local/bin/create-exam-files-local
+
+# Create /dev/x directory (needed for Falco question)
+# Note: /dev is a special filesystem, but we create the directory structure
+RUN mkdir -p /dev/x || true
 
 RUN mkdir -p /tmp/exam-env
 
