@@ -394,6 +394,8 @@ spec:
 EOF
 
 # 5 pods with vulnerable images (student scans and deletes 3, keeps 2)
+# Note: nginx:3 and nginx:3.7 don't exist, using nginx:1.18 and nginx:1.19 (older versions with vulnerabilities)
+#       photon:3 doesn't exist, using photon:3.0 (correct tag)
 cat <<EOF | kubectl apply -f -
 apiVersion: v1
 kind: Pod
@@ -403,7 +405,7 @@ metadata:
 spec:
   containers:
   - name: nginx
-    image: nginx:3
+    image: nginx:1.18
     ports:
     - containerPort: 80
 ---
@@ -415,7 +417,7 @@ metadata:
 spec:
   containers:
   - name: nginx
-    image: nginx:3.7
+    image: nginx:1.19
     ports:
     - containerPort: 80
 ---
