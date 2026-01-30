@@ -15,6 +15,8 @@ RUN chmod +x /usr/local/bin/entrypoint.sh
 
 # persist existing entrypoint and modify it to disable TLS
 RUN cp /usr/local/bin/dockerd-entrypoint.sh /usr/local/bin/startup.sh
+# Remove conflicting daemon.json if it exists (hosts should be set via command-line flags)
+RUN rm -f /etc/docker/daemon.json
 # Modify startup script to disable TLS
 RUN sed -i 's/DOCKER_TLS_CERTDIR=\/certs/DOCKER_TLS_CERTDIR=""/' /usr/local/bin/startup.sh
 RUN sed -i 's/dockerd-entrypoint.sh dockerd/dockerd-entrypoint.sh dockerd --host=unix:\/\/\/var\/run\/docker.sock --host=tcp:\/\/0.0.0.0:2375 --tls=false/' /usr/local/bin/startup.sh
@@ -31,6 +33,8 @@ RUN chmod +x /usr/local/bin/k3d-install.sh
 COPY scripts/create-exam-files.sh /usr/local/bin/create-exam-files.sh
 RUN chmod +x /usr/local/bin/create-exam-files.sh
 RUN /usr/local/bin/create-exam-files.sh
+# Remove daemon.json after creation (hosts must be set via command-line flags, not config file)
+RUN rm -f /etc/docker/daemon.json
 
 # Pre-install k3d to avoid startup delay
 # RUN /usr/local/bin/k3d-install.sh
