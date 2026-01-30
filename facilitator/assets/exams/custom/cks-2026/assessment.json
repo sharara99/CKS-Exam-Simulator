@@ -6,6 +6,11 @@
       "machineHostname": "ckad9999",
       "question": "CIS Benchmark – Kubelet\n\nApply CIS benchmark settings for kubelet:\n\n- In kubelet config: set anonymous auth to false (in config file), use Webhook for authorization mode.\n- In etcd manifest (`/etc/kubernetes/manifests/etcd.yaml`):\n  - Add client certificate authentication flags\n  - Remove insecure listen address flag",
       "concepts": ["CIS benchmark", "kubelet", "etcd", "security"],
+      "documentation": [
+        "https://kubernetes.io/docs/reference/config-api/kubelet-config.v1beta1/",
+        "https://kubernetes.io/docs/reference/command-line-tools-reference/kubelet/",
+        "https://kubernetes.io/docs/tasks/administer-cluster/kubelet-config-file/"
+      ],
       "verification": [
         {
           "id": "1",
@@ -22,6 +27,11 @@
       "machineHostname": "ckad9999",
       "question": "Remove Anonymous Access to API Server\n\nConfigure the API server to disable anonymous authentication and enable NodeRestriction admission plugin.\n\nThen remove the ClusterRoleBinding named `anonymous-access` that grants anonymous access to the cluster.",
       "concepts": ["apiserver", "RBAC", "anonymous-auth", "NodeRestriction"],
+      "documentation": [
+        "https://kubernetes.io/docs/reference/command-line-tools-reference/kube-apiserver/",
+        "https://kubernetes.io/docs/reference/access-authn-authz/authorization/",
+        "https://kubernetes.io/docs/reference/access-authn-authz/admission-controllers/#noderestriction"
+      ],
       "verification": [
         {
           "id": "1",
@@ -38,6 +48,10 @@
       "machineHostname": "ckad9999",
       "question": "Image Policy Webhook\n\nEnable ImagePolicyWebhook in apiserver and use config file:\n\n1. Update config file (it's in JSON format) to implicit deny by setting parameter `defaultAllow` to `false` instead of `true`\n2. Update kubeconfig file to point to webhook server URL shared in the question\n3. Update kube-apiserver manifest to enable image policy plugin and specify the admission control config file path",
       "concepts": ["ImagePolicyWebhook", "admission control", "apiserver"],
+      "documentation": [
+        "https://kubernetes.io/docs/reference/access-authn-authz/admission-controllers/#imagepolicywebhook",
+        "https://kubernetes.io/docs/reference/config-api/apiserver-config.v1/#admissionconfiguration-k8s-io-v1"
+      ],
       "verification": [
         {
           "id": "1",
@@ -54,6 +68,10 @@
       "machineHostname": "ckad9999",
       "question": "Deployment – readOnlyRootFilesystem\n\nUpdate deployments to be `readOnlyRootFilesystem` to `true` to be immutable.",
       "concepts": ["deployments", "securityContext", "readOnlyRootFilesystem"],
+      "documentation": [
+        "https://kubernetes.io/docs/tasks/configure-pod-container/security-context/",
+        "https://kubernetes.io/docs/concepts/security/pod-security-standards/"
+      ],
       "verification": [
         {
           "id": "1",
@@ -70,6 +88,10 @@
       "machineHostname": "ckad9999",
       "question": "Deployment – Security Context\n\nUpdate deployment that has 2 containers with security context in each pod:\n- `runAsUser: 30000`\n- `allowPrivilegeEscalation: false`\n- `readOnlyRootFilesystem: true`",
       "concepts": ["deployments", "securityContext", "runAsUser", "allowPrivilegeEscalation"],
+      "documentation": [
+        "https://kubernetes.io/docs/tasks/configure-pod-container/security-context/",
+        "https://kubernetes.io/docs/concepts/security/pod-security-standards/"
+      ],
       "verification": [
         {
           "id": "1",
@@ -86,6 +108,9 @@
       "machineHostname": "ckad9999",
       "question": "Istio Security and mTLS\n\nIstio has been installed in the cluster. Enable Istio sidecar injection for the whole Namespace `team-sedum` and ensure all current and future Pods are running with the Istio proxy sidecar.",
       "concepts": ["Istio", "sidecar injection", "mTLS"],
+      "documentation": [
+        "https://kubernetes.io/docs/concepts/workloads/pods/#pod-templates"
+      ],
       "verification": [
         {
           "id": "1",
@@ -102,6 +127,10 @@
       "machineHostname": "ckad9999",
       "question": "NetworkPolicy – Deny All Traffic\n\nCreate network policy that denies all egress and ingress traffic to pods in `development` namespace.\n\n```\napiVersion: networking.k8s.io/v1\nkind: NetworkPolicy\nmetadata:\n  name: deny-all-traffic\n  namespace: development\nspec:\n  podSelector: {}\n  policyTypes:\n  - Ingress\n```",
       "concepts": ["NetworkPolicy", "ingress", "egress", "deny-all"],
+      "documentation": [
+        "https://kubernetes.io/docs/concepts/services-networking/network-policies/",
+        "https://kubernetes.io/docs/tasks/administer-cluster/declare-network-policy/"
+      ],
       "verification": [
         {
           "id": "1",
@@ -118,6 +147,10 @@
       "machineHostname": "ckad9999",
       "question": "NetworkPolicy – Allow from Stage and QA\n\nCreate network policy that allow only traffic to all pods in namespace `naboo` from pods with label `environmental: stage` and from pods in namespace `qa`.\n\n```\napiVersion: networking.k8s.io/v1\nkind: NetworkPolicy\nmetadata:\n  name: allow-from-stage-and-qa\n  namespace: naboo\nspec:\n  podSelector: {}\n  policyTypes:\n  - Ingress\n  ingress:\n  - from:\n    - namespaceSelector:\n        matchLabels:\n          name: qa\n    - podSelector:\n        matchLabels:\n          environmental: stage\n```",
       "concepts": ["NetworkPolicy", "podSelector", "namespaceSelector"],
+      "documentation": [
+        "https://kubernetes.io/docs/concepts/services-networking/network-policies/",
+        "https://kubernetes.io/docs/tasks/administer-cluster/declare-network-policy/"
+      ],
       "verification": [
         {
           "id": "1",
@@ -134,6 +167,10 @@
       "machineHostname": "ckad9999",
       "question": "Upgrade Kubernetes\n\nUpgrade a Kubernetes node. Drain the node, upgrade kubeadm and kubelet components, then uncordon the node.",
       "concepts": ["kubeadm", "upgrade", "kubelet", "drain", "uncordon"],
+      "documentation": [
+        "https://kubernetes.io/docs/tasks/administer-cluster/kubeadm/kubeadm-upgrade/",
+        "https://kubernetes.io/docs/tasks/administer-cluster/safely-drain-node/"
+      ],
       "verification": [
         {
           "id": "1",
@@ -150,6 +187,11 @@
       "machineHostname": "ckad9999",
       "question": "ServiceAccount Token Expiration\n\nPods should have annotation `token-lifetime` with value `1200`.\nServiceAccount `stream-multiplex` should be used.\nDisable automounting of ServiceAccount tokens.\nThe ServiceAccount token should be mounted at `/var/run/secrets/custom/` with an expiration of 1200s.\n\n```\napiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: stream-multiplex\n  namespace: team-coral\nspec:\n  replicas: 2\n  selector:\n    matchLabels:\n      id: stream-multiplex\n  template:\n    metadata:\n      labels:\n        id: stream-multiplex\n      annotations:\n        token-lifetime: \"1200\"\n    spec:\n      serviceAccountName: stream-multiplex\n      automountServiceAccountToken: false\n      containers:\n        - image: httpd:2-alpine\n          name: httpd\n          resources:\n            requests:\n              cpu: 20m\n              memory: 20Mi\n          volumeMounts:\n            - name: token-volume\n              mountPath: /var/run/secrets/custom\n              readOnly: true\n      volumes:\n        - name: token-volume\n          projected:\n            sources:\n              - serviceAccountToken:\n                  path: token\n                  expirationSeconds: 1200\n```",
       "concepts": ["ServiceAccount", "projected volume", "token expiration"],
+      "documentation": [
+        "https://kubernetes.io/docs/concepts/security/service-accounts/",
+        "https://kubernetes.io/docs/concepts/storage/volumes/#projected",
+        "https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/"
+      ],
       "verification": [
         {
           "id": "1",
@@ -166,6 +208,11 @@
       "machineHostname": "ckad9999",
       "question": "TLS Secret – Create and Mount\n\nCreate a TLS secret named `code-secret` in namespace `code` using the certificate files located at `/root/custom-cert.crt` and `/root/custom-key.key`.\n\nThen edit the deployment `code-server` in namespace `code` to mount this secret as a volume at `/etc/code/tls` with read-only access.",
       "concepts": ["secrets", "TLS", "volume", "volumeMount"],
+      "documentation": [
+        "https://kubernetes.io/docs/concepts/configuration/secret/",
+        "https://kubernetes.io/docs/concepts/storage/volumes/#secret",
+        "https://kubernetes.io/docs/tasks/inject-data-application/distribute-credentials-secure/"
+      ],
       "verification": [
         {
           "id": "1",
@@ -182,6 +229,10 @@
       "machineHostname": "ckad9999",
       "question": "Docker Security\n\nRemove user from docker group and secure docker:\n\n- Change the ownership of `/var/run/docker.sock` to root:root\n- Add `--group=root` to the ExecStart of docker systemd file\n- Modify `/etc/docker/daemon.json` to remove TCP section, keep only unix socket\n- Restart docker service",
       "concepts": ["Docker", "daemon.json", "socket", "security"],
+      "documentation": [
+        "https://kubernetes.io/docs/concepts/containers/runtime-class/",
+        "https://kubernetes.io/docs/setup/production-environment/container-runtimes/"
+      ],
       "verification": [
         {
           "id": "1",
@@ -198,6 +249,9 @@
       "machineHostname": "ckad9999",
       "question": "Falco\n\nGet the pod that uses this folder `/dev/x`.\n\nAdd a Falco rule to detect access to files starting with `/dev/x` and scale the deployment that uses this folder to zero.",
       "concepts": ["Falco", "rules", "runtime security"],
+      "documentation": [
+        "https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#scaling-a-deployment"
+      ],
       "verification": [
         {
           "id": "1",
@@ -214,6 +268,10 @@
       "machineHostname": "ckad9999",
       "question": "ImagePolicyWebhook – AdmissionConfiguration\n\nCreate an AdmissionConfiguration at `/opt/course/12/webhook/admission-config.yaml` with ImagePolicyWebhook configuration.\n\nConfigure the apiserver to:\n- Mount `/opt/course/12/webhook` at `/etc/kubernetes/webhook`\n- Use the AdmissionConfiguration at the mounted path\n- Enable the ImagePolicyWebhook admission plugin\n\nFix the admission config and kubeconfig YAML files as needed.",
       "concepts": ["ImagePolicyWebhook", "AdmissionConfiguration", "apiserver"],
+      "documentation": [
+        "https://kubernetes.io/docs/reference/access-authn-authz/admission-controllers/#imagepolicywebhook",
+        "https://kubernetes.io/docs/reference/config-api/apiserver-config.v1/#admissionconfiguration-k8s-io-v1"
+      ],
       "verification": [
         {
           "id": "1",
@@ -230,6 +288,11 @@
       "machineHostname": "ckad9999",
       "question": "Pod Security Standard\n\nIn namespace `restricted` (enforcing restricted Pod Security), fix the deployment `web-server` so its pods can run.\n\nSet the securityContext to comply with restricted policy and remove `runAsUser: 0`.",
       "concepts": ["Pod Security Admission", "restricted", "securityContext"],
+      "documentation": [
+        "https://kubernetes.io/docs/concepts/security/pod-security-standards/",
+        "https://kubernetes.io/docs/tasks/configure-pod-container/security-context/",
+        "https://kubernetes.io/docs/concepts/security/pod-security-admission/"
+      ],
       "verification": [
         {
           "id": "1",
@@ -246,6 +309,10 @@
       "machineHostname": "ckad9999",
       "question": "Audit Log Policy\n\nAudit Logging has been enabled in the cluster with an Audit Policy located at `/etc/kubernetes/audit/policy.yaml`.\n\nChange the configuration so that only one backup of the logs is stored.\n\nAlter the Policy in a way that it only stores logs:\n- From Secret resources, level Metadata\n- From `system:nodes` userGroups, level RequestResponse\n- Catch all other metadata logs\n\nAfter you update the Policy make sure to empty the log file at `/etc/kubernetes/audit/logs/audit.log`.",
       "concepts": ["audit", "audit policy", "apiserver"],
+      "documentation": [
+        "https://kubernetes.io/docs/tasks/debug/debug-cluster/audit/",
+        "https://kubernetes.io/docs/reference/config-api/apiserver-audit.v1/"
+      ],
       "verification": [
         {
           "id": "1",

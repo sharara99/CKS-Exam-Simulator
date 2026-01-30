@@ -140,9 +140,64 @@ function generateQuestionContent(question) {
         const namespace = originalData.namespace || 'N/A';
         const concepts = originalData.concepts || [];
         const conceptsString = concepts.join(', ');
+        const documentation = originalData.documentation || [];
         
         // Format question content with improved styling
         const formattedQuestionContent = processQuestionContent(question.content);
+        
+        // Function to generate short label from URL
+        function getDocLabel(url) {
+            const urlLower = url.toLowerCase();
+            // Map common patterns to short labels
+            if (urlLower.includes('kubelet-config')) return 'kubelet-config';
+            if (urlLower.includes('kubelet') && urlLower.includes('command-line')) return 'kubelet-cli';
+            if (urlLower.includes('kubelet') && urlLower.includes('config-file')) return 'kubelet-file';
+            if (urlLower.includes('kube-apiserver')) return 'kube-api';
+            if (urlLower.includes('apiserver') && urlLower.includes('authorization')) return 'api-auth';
+            if (urlLower.includes('noderestriction')) return 'node-restriction';
+            if (urlLower.includes('imagepolicywebhook')) return 'image-webhook';
+            if (urlLower.includes('admission-controllers')) return 'admission';
+            if (urlLower.includes('admissionconfiguration')) return 'admission-config';
+            if (urlLower.includes('security-context')) return 'security-context';
+            if (urlLower.includes('pod-security-standards')) return 'pod-security';
+            if (urlLower.includes('pod-security-admission')) return 'psa';
+            if (urlLower.includes('network-policies')) return 'network-policy';
+            if (urlLower.includes('network-policy')) return 'netpol';
+            if (urlLower.includes('kubeadm') && urlLower.includes('upgrade')) return 'kubeadm-upgrade';
+            if (urlLower.includes('drain')) return 'drain-node';
+            if (urlLower.includes('service-account')) return 'serviceaccount';
+            if (urlLower.includes('serviceaccount')) return 'sa';
+            if (urlLower.includes('projected')) return 'projected-vol';
+            if (urlLower.includes('secret')) return 'secrets';
+            if (urlLower.includes('volume')) return 'volumes';
+            if (urlLower.includes('runtime-class')) return 'runtime';
+            if (urlLower.includes('container-runtimes')) return 'runtimes';
+            if (urlLower.includes('audit')) return 'audit';
+            if (urlLower.includes('etcd')) return 'etcd';
+            if (urlLower.includes('rbac')) return 'rbac';
+            if (urlLower.includes('deployment')) return 'deployment';
+            // Fallback: extract meaningful part from URL
+            const parts = url.split('/').filter(p => p && p !== 'docs' && p !== 'reference' && p !== 'tasks' && p !== 'concepts');
+            const lastPart = parts[parts.length - 1] || '';
+            return lastPart.replace(/\.html$/, '').replace(/-/g, '-').substring(0, 20);
+        }
+        
+        // Generate documentation links HTML
+        let documentationHtml = '';
+        if (documentation && documentation.length > 0) {
+            const docLinks = documentation.map(doc => {
+                const label = getDocLabel(doc);
+                return `<a href="${doc}" target="_blank" rel="noopener noreferrer" class="text-decoration-none me-2 mb-1 d-inline-block">
+                    <span class="badge bg-info">${label}</span>
+                </a>`;
+            }).join('');
+            documentationHtml = `
+                <div class="mb-3">
+                    <strong>Kubernetes Documentation:</strong>
+                    <div class="mt-2">${docLinks}</div>
+                </div>
+            `;
+        }
         
         // Create formatted content with minimal layout
         return `
@@ -160,6 +215,8 @@ function generateQuestionContent(question) {
                     <div class="mb-3">
                         <strong>Concepts:</strong> <span class="text-primary">${conceptsString}</span>
                     </div>
+                    
+                    ${documentationHtml}
                     
                     <hr class="my-3">
                 </div>
