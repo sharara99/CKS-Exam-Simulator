@@ -322,6 +322,66 @@
           "weightage": 6
         }
       ]
+    },
+    {
+      "id": "17",
+      "namespace": "default",
+      "machineHostname": "ckad9999",
+      "question": "Dockerfile / Deployment Best Practices\n\nUpdate a deployment and Dockerfile to follow security best practices:\n\n**Deployment:**\n- Change `privileged: true` to `false`\n- Set `capabilities.drop: [\"ALL\"]`\n\n**Dockerfile:**\n- Add base image tag (use specific version tag, not `latest`)\n- Use non-root user (e.g., `nobody`)\n- Change to `nobody` user at the last step (not in the layer before downloading packages)\n\nExample Dockerfile structure:\n```\nUSER root\nRUN apt-get update && apt-get install ...\n# ... other commands ...\nUSER nobody\n```",
+      "concepts": ["Dockerfile", "deployments", "securityContext", "privileged", "capabilities"],
+      "documentation": [
+        "https://kubernetes.io/docs/tasks/configure-pod-container/security-context/",
+        "https://kubernetes.io/docs/concepts/security/pod-security-standards/"
+      ],
+      "verification": [
+        {
+          "id": "1",
+          "description": "Deployment and Dockerfile updated with security best practices",
+          "verificationScriptFile": "q17_s1_validate.sh",
+          "expectedOutput": "0",
+          "weightage": 6
+        }
+      ]
+    },
+    {
+      "id": "18",
+      "namespace": "default",
+      "machineHostname": "ckad9999",
+      "question": "Image Scan with Trivy\n\n**Task 1:**\n- Find a deployment with 3 containers, one of them has library x with version y\n- Find this image, scan it, and generate SBOM file\n\n**Task 2:**\n- Use Trivy to scan vulnerability images of already creating pods\n- Images to scan: `nginx:3`, `nginx:3.7`, `photon:3`, `amazon` image\n- First extract all pods in a yaml file for each pod (in case you delete the wrong pod you can create it again)\n- Remove the pods that have Critical or High vulnerabilities\n- There were 5 pods, you will delete 3 and keep 2 of them\n\nExample command:\n```\ntrivy image --format json --output <output-file> <image-name>\n```",
+      "concepts": ["Trivy", "image scanning", "vulnerability", "SBOM"],
+      "documentation": [
+        "https://kubernetes.io/docs/concepts/containers/images/",
+        "https://kubernetes.io/docs/concepts/workloads/pods/"
+      ],
+      "verification": [
+        {
+          "id": "1",
+          "description": "Images scanned and vulnerable pods removed",
+          "verificationScriptFile": "q18_s1_validate.sh",
+          "expectedOutput": "0",
+          "weightage": 6
+        }
+      ]
+    },
+    {
+      "id": "19",
+      "namespace": "default",
+      "machineHostname": "ckad9999",
+      "question": "Create Ingress\n\nCreate an Ingress resource for the specified service with TLS and nginx Ingress class.\n\nExample for `rocket-server` in namespace `space`:\n\n```\napiVersion: networking.k8s.io/v1\nkind: Ingress\nmetadata:\n  name: rocket-ingress\n  namespace: space\n  annotations:\n    nginx.ingress.kubernetes.io/ssl-redirect: \"true\"\nspec:\n  ingressClassName: nginx\n  tls:\n    - hosts:\n        - rocket-server.local\n      secretName: rocket-tls\n  rules:\n    - host: rocket-server.local\n      http:\n        paths:\n          - path: /\n            pathType: Prefix\n            backend:\n              service:\n                name: rocket-server\n                port:\n                  number: 80\n```",
+      "concepts": ["Ingress", "TLS", "nginx", "ingressClassName"],
+      "documentation": [
+        "https://kubernetes.io/docs/concepts/services-networking/ingress/",
+        "https://kubernetes.io/docs/concepts/services-networking/ingress/#tls"
+      ],
+      "verification": [
+        {
+          "id": "1",
+          "description": "Ingress resource created with TLS configuration",
+          "verificationScriptFile": "q19_s1_validate.sh",
+          "expectedOutput": "0",
+          "weightage": 6
+        }
+      ]
     }
   ]
 }

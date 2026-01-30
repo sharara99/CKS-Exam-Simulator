@@ -322,10 +322,141 @@ spec:
 EOF
 
 # ---------------------------------------------------------------------------
-# Optional: space namespace for Ingress practice (from expect-exam)
+# Q16: Audit Log Policy – audit policy file and log directory (created via DaemonSet in q16_setup.sh)
+# Note: q16_setup.sh creates files on control plane node
 # ---------------------------------------------------------------------------
-kubectl create deployment rocket-server --image=nginx:alpine -n space --replicas=1 --dry-run=client -o yaml | kubectl apply -f - 2>/dev/null || true
-kubectl expose deployment rocket-server --port=80 --target-port=80 -n space --name=rocket-server --dry-run=client -o yaml | kubectl apply -f - 2>/dev/null || true
+echo "$(date '+%Y-%m-%d %H:%M:%S') | Q16: Audit policy setup (run q16_setup.sh for file creation on nodes)..."
+
+# ---------------------------------------------------------------------------
+# Q17: Dockerfile / Deployment Best Practices – deployment with privileged and Dockerfile
+# ---------------------------------------------------------------------------
+echo "$(date '+%Y-%m-%d %H:%M:%S') | Creating Q17: insecure-app deployment..."
+cat <<EOF | kubectl apply -f -
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: insecure-app
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: insecure-app
+  template:
+    metadata:
+      labels:
+        app: insecure-app
+    spec:
+      containers:
+      - name: app
+        image: nginx:latest
+        securityContext:
+          privileged: true
+          # capabilities.drop is empty (student needs to add ["ALL"])
+        ports:
+        - containerPort: 80
+EOF
+# Dockerfile created via DaemonSet in q17_setup.sh
+
+# ---------------------------------------------------------------------------
+# Q18: Image Scan with Trivy – deployment with 3 containers + 5 pods with vulnerable images
+# ---------------------------------------------------------------------------
+echo "$(date '+%Y-%m-%d %H:%M:%S') | Creating Q18: multi-container deployment and vulnerable pods..."
+# Deployment with 3 containers
+cat <<EOF | kubectl apply -f -
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: multi-container-app
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: multi-container-app
+  template:
+    metadata:
+      labels:
+        app: multi-container-app
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:alpine
+        ports:
+        - containerPort: 80
+      - name: redis
+        image: redis:6.2-alpine
+        ports:
+        - containerPort: 6379
+      - name: app
+        image: node:16-alpine
+        command: ["sleep", "3600"]
+EOF
+
+# 5 pods with vulnerable images (student scans and deletes 3, keeps 2)
+cat <<EOF | kubectl apply -f -
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pod-nginx3
+  namespace: default
+spec:
+  containers:
+  - name: nginx
+    image: nginx:3
+    ports:
+    - containerPort: 80
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pod-nginx37
+  namespace: default
+spec:
+  containers:
+  - name: nginx
+    image: nginx:3.7
+    ports:
+    - containerPort: 80
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pod-photon3
+  namespace: default
+spec:
+  containers:
+  - name: photon
+    image: photon:3.0
+    command: ["sleep", "3600"]
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pod-amazon
+  namespace: default
+spec:
+  containers:
+  - name: amazon
+    image: amazonlinux:1
+    command: ["sleep", "3600"]
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pod-safe-alpine
+  namespace: default
+spec:
+  containers:
+  - name: alpine
+    image: alpine:latest
+    command: ["sleep", "3600"]
+EOF
+
+# ---------------------------------------------------------------------------
+# Q19: Create Ingress – service rocket-server (already created above)
+# ---------------------------------------------------------------------------
+echo "$(date '+%Y-%m-%d %H:%M:%S') | Q19: Service rocket-server ready (student creates TLS secret and Ingress)..."
 
 # ---------------------------------------------------------------------------
 # Wait for deployments to be available (best effort)
@@ -343,5 +474,11 @@ kubectl wait --for=condition=available --timeout=60s deployment/dev-x-app -n def
 
 echo "$(date '+%Y-%m-%d %H:%M:%S') | CKS 2026 setup completed."
 echo "Namespaces: development, naboo, qa, team-sedum, team-coral, code, restricted, space, immutable-app, dual-container, team-white"
-echo "Resources: app-to-secure, dual-app, one, two, dev-app, naboo-app, qa-app, stream-multiplex, code-server, web-server, rocket-server, dev-x-app, image-bouncer-webhook"
+echo "Resources: app-to-secure, dual-app, one, two, dev-app, naboo-app, qa-app, stream-multiplex, code-server, web-server, rocket-server, dev-x-app, image-bouncer-webhook, insecure-app, multi-container-app, pod-nginx3, pod-nginx37, pod-photon3, pod-amazon, pod-safe-alpine"
+echo ""
+echo "Note: For Q16, Q17, Q18, Q19 - run individual setup scripts if needed:"
+echo "  - q16_setup.sh: Creates audit policy files on control plane node"
+echo "  - q17_setup.sh: Creates Dockerfile directory"
+echo "  - q18_setup.sh: Ensures all pods are created (if images fail to pull)"
+echo "  - q19_setup.sh: Ensures service is ready"
 exit 0
